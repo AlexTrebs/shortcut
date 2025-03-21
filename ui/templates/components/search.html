@@ -1,0 +1,22 @@
+<form
+  action="/api/search"
+  method="get"
+  autocomplete="on"
+  class="max-w-md"
+>
+  <div class="flex items-center gap-2 mb-4">
+    <input
+      id="search"
+      name="keyword"
+      type="keyword"
+      class="flex w-full h-10 px-3 py-2 text-sm border rounded-md border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-700 dark:text-white"
+      placeholder="Search by keyword..."
+      onkeydown="return (event.keyCode != 13);"
+      hx-get="/api/search"
+      hx-trigger="keyup changed delay:500ms"
+      hx-target="#search-list"
+    />
+    </button>
+  </div>
+  <div id="submit-error"></div>
+</form>
