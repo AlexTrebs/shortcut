@@ -1,1 +1,1 @@
-### ~~ Shortcut ~~
+### ~ Shortcut ~
