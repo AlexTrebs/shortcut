@@ -1,8 +1,0 @@
-  <ul class="space-y-2">
-    {% for search in shortcuts %}
-    <li class="flex items-center gap-2 dark:text-white" id="search-{{search.id}}">
-      <label class="flex-1"> {{ search.keyword }} </label>
-      <link href="{{ search.url }}" class="flex-1"> {{ search.url }} </label>
-    </li>
-    {% endfor %}
-  </ul>

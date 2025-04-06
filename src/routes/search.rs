@@ -19,7 +19,7 @@ pub async fn get_shortcuts(
   Query(params): Query<SearchRequest>,
 ) -> Result<Html<String>, ()> {
   debug!("{:?}", params.keyword);
-  let result: Result<Vec<Shortcut>, ShortcutError> = app.shortcut_service.find_similar(&params.keyword).await;
+  let result: Result<Vec<Shortcut>, ShortcutError> = app.shortcut_service.find_similar(&params.keyword.to_lowercase()).await;
 
   return match result {
     Ok(shortcuts) => {
@@ -38,7 +38,7 @@ pub async fn get_shortcuts(
 }
 
 #[derive(TeraTemplate, Serialize)]
-#[template(path = "search/search_results.html")]
+#[template(path = "components/search_results.html")]
 pub struct SearchTemplate {
   shortcuts: Vec<Shortcut>,
   query: String,

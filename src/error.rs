@@ -8,6 +8,8 @@ pub enum ShortcutError {
     FailedToGet,
     #[error("Failed to create shortcut. Please try again.")]
     FailedToCreate,
+    #[error("Keyword is not unique.")]
+    UniqueConstraintError,
     #[error("Failed to update shortcut. Please try again.")]
     FailedToUpdate,
     #[error("Failed to create or update shortcut. Please try again.")]

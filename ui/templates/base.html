@@ -11,6 +11,15 @@
     {% block head %}{% endblock %}
   </head>
   <body>
-    <div id="content">{% block content %}{% endblock %}</div>
+    <div id="contents" >
+      <div class="flex flex-col h-screen dark:bg-neutral-900">
+      <header
+        class="header flex items-center px-4 border-b h-14 bg-neutral-100/40 dark:bg-neutral-800/40"
+      >
+        <h1 class="text-lg font-semibold dark:text-white">Shortcuts</h1>
+      </header>
+      {% include "components/sidebar.html" %}
+      {% block content %}{% endblock %}
+    </div></div>
   </body>
 </html>

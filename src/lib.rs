@@ -8,13 +8,13 @@ mod state;
 mod templates;
 mod utils;
 
-use axum::{Extension, http::{Method, header::CONTENT_TYPE}, routing::get, Router};
+use axum::{http::{header::CONTENT_TYPE, Method}, response::Redirect, routing::get, Extension, Router};
 use dotenv::dotenv;
 use repository::shortcut::{ShortcutRepository, ShortcutRepositoryTrait};
 use routes::create_api_routes;
 use sqlx::{Pool, Sqlite};
 use std::{sync::{LazyLock, RwLock}, time::Duration};
-use templates::index::get_index;
+use templates::{search::get_search, create::get_create};
 use tera::Tera;
 use tera_hot_reload::{watch, LiveReloadLayer};
 use tokio::net::TcpListener;
@@ -28,6 +28,10 @@ use state::AppState;
 pub static TERA: LazyLock<RwLock<Tera>> = LazyLock::new(|| {
     RwLock::new(tera::Tera::new("ui/templates/**/*").expect("Failed to create Tera instance"))
 });
+
+async fn redirect_to_search() -> Redirect {
+    Redirect::to("/search")
+}
 
 pub async fn app() -> Result<Router, ()> {
     let livereload: LiveReloadLayer = LiveReloadLayer::new();
@@ -49,7 +53,9 @@ pub async fn app() -> Result<Router, ()> {
         .allow_headers([CONTENT_TYPE]);
     
     let app: Router = Router::new()
-        .route("/", get(get_index))
+        .route("/", get(redirect_to_search))
+        .route("/search", get(get_search))
+        .route("/create", get(get_create))
         .nest_service("/assets", ServeDir::new("ui/assets"))
         .nest("/api", create_api_routes())
         .layer(livereload)

@@ -1,0 +1,7 @@
+<ul class="space-y-2 w-100">
+  {% for shortcut in shortcuts %}
+  <li class="flex items-center gap-2 dark:text-white" id="search-{{shortcut.id}}">
+    {% include "components/shortcut.html" %}
+  </li>
+  {% endfor %}
+</ul>

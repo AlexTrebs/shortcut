@@ -1,0 +1,36 @@
+<a
+  class="group flex flex-col justify-start items-start gap-2 w-full duration-500 relative rounded-lg p-4 dark:bg-neutral-900 hover:-translate-y-2 hover:shadow-xl shadow-gray-300"
+  href="{{ shortcut.url }}"
+>
+  <div class="w-full flex justify-between items-center">    
+    <h2 class="text-2xl font-bold mb-2 max-w-md ">{{ shortcut.keyword }}</h2>
+    <p href="{{ shortcut.url }}" class="line-clamp-3 max-w-md" >{{ shortcut.url }}</p>
+  </div>
+  <div class="w-full">
+    <p class="unix-time line-clamp-3 max-w-md" data-time="{{ shortcut.created }}" data-label="Created"></p>
+    <p class="unix-time line-clamp-3 max-w-md" data-time="{{ shortcut.updated }}" data-label="Updated"></p>
+  </div>
+  <script>
+    document.querySelectorAll(".unix-time").forEach(element => {
+      console.log(element);
+        const unixTimestamp = parseInt(element.getAttribute("data-time"));
+      console.log(unixTimestamp);
+
+        if (!isNaN(unixTimestamp)) {
+            const date = new Date(unixTimestamp * 1000).toLocaleString(undefined, {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                timeZoneName: "short"
+            });
+
+            const label = element.getAttribute("data-label"); // Get label from attribute
+            element.textContent = `${label}: ${date}`;
+        }
+    });
+  </script>
+</a>
+

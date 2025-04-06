@@ -1,4 +1,5 @@
 use axum::response::Result;
+use sqlx::Error;
 
 use crate::{
   error::ShortcutError,
@@ -14,9 +15,9 @@ pub struct ShortcutService {
 pub trait ShortcutServiceTrait {
   fn new(repository: ShortcutRepository) -> Self;
   async fn find_similar(&self, req: &String) -> Result<Vec<Shortcut>, ShortcutError>;
-  async fn create_or_update(&self, req: &PostRequest) -> Result<String, ShortcutError>;
-  async fn update(&self, req: &Shortcut) -> Result<bool, ShortcutError>;
-  // async fn get(&self, req: SearchRequest) -> Result<Shortcut, ShortcutError>;
+  async fn create(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError>;
+  async fn update(&self, req: &PostRequest) -> Result<bool, ShortcutError>;
+  async fn get(&self, req: &String) -> Result<Shortcut, ShortcutError>;
 }
 
 impl ShortcutServiceTrait for ShortcutService {
@@ -35,27 +36,32 @@ impl ShortcutServiceTrait for ShortcutService {
     }
   }
 
-  async fn create_or_update(&self, req: &PostRequest) -> Result<String, ShortcutError> {
-    let shortcut: Shortcut = Shortcut::from_request(req);
-    let result: Result<bool, ShortcutError> = self.repository.create(&shortcut).await;
+  async fn create(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
+    let result: Result<bool, Error> = self.repository.create(&shortcut).await;
     
     match result {
-      Ok(_) => Ok("created".to_string()),
-      Err(_err) => {
-        match self.update(&shortcut).await {
-          Ok(_) => Ok("updated".to_string()),
-          Err(_err) => Err(ShortcutError::FailedToCreateOrUpdate),
-        }
-      },
+      Ok(success) => Ok(success),
+      Err(Error::Database(db_err)) if db_err.message().contains("UNIQUE constraint failed") => Err(ShortcutError::UniqueConstraintError),
+      Err(_) => Err(ShortcutError::FailedToCreate),
     }
   }
 
-  async fn update(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
+  async fn update(&self, req: &PostRequest) -> Result<bool, ShortcutError> {
+    let shortcut: Shortcut = Shortcut::from_request(req);
     let result: Result<bool, ShortcutError> = self.repository.update(&shortcut).await;
     
     match result {
-      Ok(todos) => Ok(todos),
+      Ok(success) => Ok(success),
       Err(_err) => Err(ShortcutError::FailedToUpdate),
+    }
+  }
+
+  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError> {
+    let result: Result<Shortcut, ShortcutError> = self.repository.get(&keyword).await;
+    
+    match result {
+      Ok(success) => Ok(success),
+      Err(_err) => Err(ShortcutError::FailedToGet),
     }
   }
 }

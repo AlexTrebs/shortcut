@@ -1,7 +1,7 @@
 use crate::{error::ShortcutError, models::shortcut::Shortcut};
 
 use rust_fuzzy_search::fuzzy_compare;
-use sqlx::{Pool, Sqlite};
+use sqlx::{Error, Pool, Sqlite};
 use tracing::{debug, error};
 
 #[derive(Clone)]
@@ -12,10 +12,9 @@ pub struct ShortcutRepository {
 pub trait ShortcutRepositoryTrait {
   fn new(database: Pool<Sqlite>) -> Self;
   async fn fuzzy_search(&self, search: &str) -> Result<Vec<Shortcut>, ShortcutError>;
-  // async fn get(&self, id: String) -> Result<Shortcut, ShortcutError>;
-  async fn create(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
+  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError>;
+  async fn create(&self, todo: &Shortcut) -> Result<bool, Error>;
   async fn update(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
-  // async fn delete(&self, id: String) -> Result<bool, ShortcutError>;
 }
 
 impl ShortcutRepositoryTrait for ShortcutRepository {
@@ -43,50 +42,48 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
     }
   }
 
-  // async fn get(&self, id: String) -> Result<Shortcut, ShortcutError> {
-  //   let result;
+  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError> {
+    let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcuts WHERE keyword = ?1;"#, keyword)
+      .fetch_one(&self.database).await;
 
-  //   match result {
-  //     Ok(result) => match result {
-  //       Some(shortcut) => Ok(shortcut),
-  //       None => Err(ShortcutError::NotFound),
-  //     },
-  //     Err(err) => {
-  //       error!("Failed to get shortcut ({}) from database: {}", id, err);
-  //       Err(ShortcutError::FailedToGet)
-  //     }
-  //   }
-  // }
+    match result {
+      Ok(result) => Ok(result),
+      Err(err) => {
+        error!("Failed to get shortcut for ({}) from database: {}", keyword, err);
+        Err(ShortcutError::FailedToGet)
+      }
+    }
+  }
 
-  async fn create(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
-    let result = sqlx::query_as!(
-      Shortcut, 
+  async fn create(&self, shortcut: &Shortcut) -> Result<bool, Error> {
+    let result = sqlx::query!(
       r#"INSERT INTO shortcuts (created, updated, keyword, url) VALUES (?1, ?2, ?3, ?4)"#, 
       shortcut.created, 
       shortcut.updated,
       shortcut.keyword,
-      shortcut.url)
-      .fetch_one(&self.database)
-      .await;
+      shortcut.url
+    )
+    .execute(&self.database)
+    .await;
 
     match result {
       Ok(_) => Ok(true),
       Err(err) => {
-        debug!("Failed to add shortcut ({}) to database: {}", shortcut.keyword, err);
-        Err(ShortcutError::FailedToCreate)
+        error!("Failed to add shortcut ({}) to database: {}", shortcut.keyword, err);
+        Err(err)
       }
     }
   }
 
   async fn update(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
-    let result = sqlx::query_as!(
-      Shortcut, 
+    let result = sqlx::query!(
       r#"UPDATE shortcuts SET updated = ?1, url = ?2 WHERE keyword = ?3"#, 
       shortcut.updated,
       shortcut.url,
-      shortcut.keyword)
-      .fetch_one(&self.database)
-      .await;
+      shortcut.keyword
+    )
+    .execute(&self.database)
+    .await;
 
     match result {
       Ok(_) => Ok(true),
@@ -96,17 +93,4 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
       }
     }
   }
-
-  // async fn delete(&self, id: String) -> Result<bool, ShortcutError> {
-  //   let result;
-
-  //   match result {
-  //     Ok(_result) => Ok(true),
-  //     Err(err) => {
-  //       error!("Failed to delete shortcut ({}) from database: {}", id, err);
-  //       Err(ShortcutError::FailedToUpdate)
-  //     }
-  //   }
-  // }
-  
 }
