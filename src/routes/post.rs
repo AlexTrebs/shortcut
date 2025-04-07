@@ -74,7 +74,7 @@ pub struct CheckUpdateTemplate {
 }
 
 #[derive(TeraTemplate, Serialize)]
-#[template(path = "components/check_update.html")]
+#[template(path = "components/error.html")]
 pub struct PostErrorTemplate {
   error: String,
   query: String,

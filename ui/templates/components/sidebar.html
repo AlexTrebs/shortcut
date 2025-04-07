@@ -11,19 +11,19 @@
   </a>
 </div>
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-      // Get current URL path
+  function highlightSidebar() {
       const currentPath = window.location.pathname.replace("/", "").toLowerCase();
-
-      // Select all sidebar buttons
-      const sidebarButtons = document.querySelectorAll("#sidebar a");
-      console.log(sidebarButtons);
-
-      sidebarButtons.forEach(button => {
-        console.log(button);
+      document.querySelectorAll("#sidebar a").forEach(button => {
           if (button.getAttribute("data-page") === currentPath) {
-              button.classList.add("bg-gray-700", "text-gray-300"); // Highlight active button
+              button.classList.add("bg-gray-700", "text-gray-300");
+          } else {
+              button.classList.remove("bg-gray-700", "text-gray-300");
           }
       });
+  }
+
+  document.addEventListener("DOMContentLoaded", highlightSidebar);
+  document.addEventListener("htmx:afterSwap", function() {
+      setTimeout(() => highlightSidebar(), 50);
   });
 </script>

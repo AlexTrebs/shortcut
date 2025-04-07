@@ -12,7 +12,7 @@ pub struct ShortcutRepository {
 pub trait ShortcutRepositoryTrait {
   fn new(database: Pool<Sqlite>) -> Self;
   async fn fuzzy_search(&self, search: &str) -> Result<Vec<Shortcut>, ShortcutError>;
-  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError>;
+  async fn get(&self, keyword: &String) -> Result<Shortcut, Error>;
   async fn create(&self, todo: &Shortcut) -> Result<bool, Error>;
   async fn update(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
 }
@@ -29,9 +29,21 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
 
     match result {
       Ok(shortcuts) => {
-        let matches = shortcuts.into_iter()
-          .filter(|shortcut| fuzzy_compare(search, &shortcut.keyword) > 0.0)
-          .collect::<Vec<Shortcut>>();
+        let mut matches:Vec<(f32, Shortcut)> = shortcuts.into_iter()
+          .filter_map(|shortcut| {
+            let score = fuzzy_compare(search, &shortcut.keyword);
+            if score > 0.0 {
+              Some((score, shortcut))  // Keep only matching results
+            } else {
+              None  // Skip non-matching results
+            }
+          })
+          .collect();
+
+        matches.sort_by(|a: &(f32, Shortcut), b| b.0.partial_cmp(&a.0).unwrap());
+
+        let matches: Vec<Shortcut> = matches.into_iter().map(|(_, shortcut)| shortcut).collect();
+
         debug!("Found {:?} matches.", matches.len());
         Ok(matches)
       },
@@ -42,7 +54,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
     }
   }
 
-  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError> {
+  async fn get(&self, keyword: &String) -> Result<Shortcut, Error> {
     let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcuts WHERE keyword = ?1;"#, keyword)
       .fetch_one(&self.database).await;
 
@@ -50,7 +62,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
       Ok(result) => Ok(result),
       Err(err) => {
         error!("Failed to get shortcut for ({}) from database: {}", keyword, err);
-        Err(ShortcutError::FailedToGet)
+        Err(err)
       }
     }
   }

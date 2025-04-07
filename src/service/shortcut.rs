@@ -1,5 +1,6 @@
 use axum::response::Result;
 use sqlx::Error;
+use tracing::error;
 
 use crate::{
   error::ShortcutError,
@@ -57,10 +58,11 @@ impl ShortcutServiceTrait for ShortcutService {
   }
 
   async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError> {
-    let result: Result<Shortcut, ShortcutError> = self.repository.get(&keyword).await;
-    
+    let result: Result<Shortcut, Error> = self.repository.get(&keyword).await;
+    error!("{:?}", result);
     match result {
       Ok(success) => Ok(success),
+      Err(Error::RowNotFound) => Err(ShortcutError::NotFound),
       Err(_err) => Err(ShortcutError::FailedToGet),
     }
   }

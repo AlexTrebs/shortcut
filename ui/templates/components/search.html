@@ -7,14 +7,14 @@
   <div class="relative dark:bg-neutral-900 rounded-lg mt-5 mb-10">
     <input
       class="peer w-full h-10 bg-transparent placeholder-transparent text-gray-800 text-sm border-none bg-gray-200 rounded-md px-3 py-2 transition box-shadow: rgba(50, 50, 93, 0.25) 0px 30px 60px -12px inset, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px inset;duration-300 ease focus:outline-none focus:border-none focus:shadow-[0_2.8px_2.2px_rgba(0,_0,_0,_0.034),_0_6.7px_5.3px_rgba(0,_0,_0,_0.048),_0_12.5px_10px_rgba(0,_0,_0,_0.06),_0_22.3px_17.9px_rgba(0,_0,_0,_0.072),_0_41.8px_33.4px_rgba(0,_0,_0,_0.086),_0_100px_80px_rgba(0,_0,_0,_0.12)] shadow-sm"
-      id="search"
+      id="keyword"
       name="keyword"
       type="keyword"
       placeholder="Add URL..."
       required="" 
       onkeydown="return (event.keyCode != 13);"
       hx-get="/api/search"
-      hx-trigger="keyup changed delay:100ms"
+      hx-trigger="keyup changed delay:100ms, load delay:100ms"
       hx-target="#search-list"
     />
     <label
@@ -26,3 +26,14 @@
   </div>
   <div id="submit-error"></div>
 </form>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get("keyword");
+    console.log(keyword);
+    if (keyword) {
+      document.getElementById("keyword").value = keyword;
+    }
+  });
+</script>
