@@ -43,11 +43,11 @@
   </div>
 
   <div>
-    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0" type="submit">
-      Submit
-    </button>
-    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-right-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:right-0" style="float: right;" type="reset">
+    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0" type="reset">
       Clear
+    </button>
+    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-right-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:right-0" style="float: right;" type="submit">
+      Submit
     </button>
   </div>
   
@@ -57,9 +57,16 @@
 
 <script>
   document.addEventListener("htmx:afterRequest", function(event) {
-    console.log(event);
     if (event.detail.successful) { // Check if request was successful
       document.getElementById("createForm").reset();
+    }
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get("keyword");
+    console.log(keyword);
+    if (keyword) {
+      document.getElementById("keyword").value = keyword;
     }
   });
 </script>

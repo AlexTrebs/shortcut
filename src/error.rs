@@ -12,10 +12,8 @@ pub enum ShortcutError {
     UniqueConstraintError,
     #[error("Failed to update shortcut. Please try again.")]
     FailedToUpdate,
-    #[error("Failed to create or update shortcut. Please try again.")]
-    FailedToCreateOrUpdate,
-    #[error("Failed to delete shortcut. Please try again.")]
-    FailedToDelete,
-    #[error("Failed to create shortcut. Empty shortcut.")]
-    EmptyShortcut,
+    #[error("Failed to find match for keyword, would you like to create one?.")]
+    NoMatches,
+    #[error("Failed to search shortcuts.")]
+    FailedToSearch
 }

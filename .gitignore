@@ -29,3 +29,4 @@ SQLite-trunk*
 *.db
 *.db-shm
 *.db-wal
+*main.css

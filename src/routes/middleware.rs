@@ -5,6 +5,7 @@ use axum::{
   response::IntoResponse,
 };
 
+/// Used to get the header from `HTMX` requests.
 pub async fn get_htmx_header(
   headers: HeaderMap,
   mut req: Request,
