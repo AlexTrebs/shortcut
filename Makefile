@@ -1,11 +1,9 @@
-.PHONY: format setup tailwind-watch server-watch dev
-
-format:
-	pnpm run format
-
 setup:
 	pnpm install
 	cargo binstall cargo-watch
+	cargo binstall sqlx-cli
+	sqlx db create
+	sqlx migrate run
 	cargo build
 
 tailwind: 
@@ -16,6 +14,3 @@ tailwind-watch:
 
 server-watch:
 	RUST_LOG=info cargo watch -x run
-
-dev:
-	make server-watch & make tailwind-watch 
