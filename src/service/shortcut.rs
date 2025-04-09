@@ -8,7 +8,6 @@ use crate::{
 };
 
 use axum::response::{Html, Redirect, Result};
-use std::env;
 use tera::Tera;
 
 #[derive(Clone)]
@@ -136,7 +135,7 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
     return match self.repository.get(&keyword).await {
       Ok(shortcut) =>Redirect::permanent(&shortcut.url),
       Err(ShortcutError::NotFound) => Redirect::permanent(&format!("/search?keyword={}", keyword)),
-      Err(_) => Redirect::permanent(&(env::var("UI_URL").expect("UI_URL not set"))),
+      Err(_) => Redirect::permanent(&(std::env::var("UI_URL").unwrap_or(String::from("http://localhost:3000")))),
     };
   }
 }
