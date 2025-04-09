@@ -1,0 +1,26 @@
+<form
+  action="/api/update"
+  id="updateForm"
+  method="post"
+  hx-post="/api/update"
+  hx-trigger="submit"
+  hx-target="#results"
+  autocomplete="on"
+  class="max-w-md mt-10"
+>
+  <input type="hidden" name="keyword" value="{{ shortcut.keyword }}">
+  <input type="hidden" name="url" value="{{ new_url }}"> 
+  <label><h2 class="text-2xl font-bold" style="text-align: center;">Do you want to update the url to:</h2> <p class="text-2xl font-bold" style="text-align: center;"> {{ new_url }}</p></label> 
+  <div class="mt-10 mb-10">
+    {% include "components/common/shortcut.html" %}
+  </div>
+  <div>
+    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-left-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:left-0" hx-get="/create" hx-trigger="click" hx-target="#contents">
+      No
+    </button>
+    <button class="relative py-2 px-8 text-black text-base font-bold nded-full overflow-hidden bg-white rounded-full transition-all duration-400 ease-in-out shadow-md hover:scale-105 hover:text-white hover:shadow-lg active:scale-90 before:absolute before:top-0 before:-right-full before:w-full before:h-full before:bg-gradient-to-r before:from-blue-600 before:to-blue-400 before:transition-all before:duration-500 before:ease-in-out before:z-[-1] before:rounded-full hover:before:right-0" type="submit" style="float: right;">
+      Yes
+    </button>
+  </div>
+  <div id="submit-error"\>
+</form>
