@@ -32,7 +32,7 @@ pub async fn search_shortcuts(
 ) -> Result<Html<String>, ()> {
   debug!("{:?}", params.keyword);
 
-  if params.keyword == "" {
+  if params.keyword.is_empty() {
     return Ok(get_empty_html().await);
   }
 

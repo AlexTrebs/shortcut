@@ -1,0 +1,107 @@
+name: ci
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "*" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: 
+          - 'ubuntu-latest'
+        rust: 
+          - stable
+
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.rust == 'nightly' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: ci
+        with:
+          shared-key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.12
+
+      - name: Install npm dependencies
+        run: |
+          ls -la
+          npm install -g pnpm
+          pnpm install
+
+  build: 
+    strategy:
+      fail-fast: false
+      matrix:
+        os: 
+          - 'ubuntu-latest'
+        rust: 
+          - stable
+
+    runs-on: ${{ matrix.os }}
+    needs: install
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore cargo cache
+        uses: Swatinem/rust-cache@v2
+        env:
+          cache-name: ci
+        with:
+          key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: clippy
+
+      - name: Install sqlx-cli
+        run: |
+          cargo install cargo-binstall
+          cargo binstall sqlx-cli
+
+      - name: Set-up Database
+        env:
+          DATABASE_URL: "sqlite://shortcuts.db?mode=rwc"
+        run: |
+          sqlx db create
+          sqlx migrate run --source ./migrations
+
+      - name: Build Debug
+        run: cargo build --verbose
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run Application
+        run: |
+          cargo run &
+          sleep 10 # Wait for the server to start
+
+      - name: Verify Application is Running
+        run: curl -f http://localhost:3000/healthcheck

@@ -71,7 +71,7 @@ pub async fn app() -> Result<Router, ()> {
     );
     info!("Hot reload set-up complete.");
     
-    return Ok(app)
+    Ok(app)
 }
 
 pub async fn run() {

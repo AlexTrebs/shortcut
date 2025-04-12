@@ -23,6 +23,7 @@ pub struct Shortcut {
 
 impl Shortcut { 
   /// A constructor which takes the default fields required to create `Shortcut`.
+  #[allow(dead_code)]
   pub fn new(keyword: String, url: String) -> Self {
     let timestamp = get_timestamp();
     Self {

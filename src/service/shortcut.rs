@@ -31,18 +31,18 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
   ///
   /// # Returns
   /// - `Html<String>` containing matching results or suggestions.
-  pub async fn find_similar(&self, keyword: &String) -> Html<String> {
+  pub async fn find_similar(&self, keyword: &str) -> Html<String> {
     let result: Result<Vec<Shortcut>, ShortcutError> = self.repository.fuzzy_search(keyword).await;
     let tera:Tera = TERA.read().unwrap().clone();
   
-    return match result {
+    match result {
       Ok(shortcuts) => {
-        let context: SearchResultsTemplate = SearchResultsTemplate { shortcuts, query: keyword.clone() };
+        let context: SearchResultsTemplate = SearchResultsTemplate { shortcuts, query: keyword.to_owned() };
         
         context.get_html(tera)
       },
       Err(ShortcutError::NoMatches) => {
-        let context: CreateNewTemplate = CreateNewTemplate { keyword: keyword.clone() };
+        let context: CreateNewTemplate = CreateNewTemplate { keyword: keyword.to_owned() };
 
         context.get_html(tera)
       }
@@ -51,7 +51,7 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
         
         context.get_html(tera)
       }
-    };
+    }
   }
 
   /// Creates a new shortcut and handles duplicate entries.
@@ -62,11 +62,11 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
   /// # Returns
   /// - `Html<String>` indicating success or failure.
   pub async fn create(&self, params: &PostRequest) -> Html<String> {
-    let new_shortcut: Shortcut = Shortcut::from_request(&params);
+    let new_shortcut: Shortcut = Shortcut::from_request(params);
     let result: Result<bool, ShortcutError> = self.repository.create(&new_shortcut).await;
     let tera: Tera = TERA.read().unwrap().clone();
   
-    return match result {
+    match result {
       Ok(_) => {
         let context: SuccessTemplate = SuccessTemplate { message: "Successfully created shortcut!".into(), successful: true };
   
@@ -95,7 +95,7 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
         
         context.get_html(tera)
       }
-    };
+    }
   }
 
   /// Updates an existing shortcut.
@@ -110,9 +110,9 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
     let result: Result<bool, ShortcutError> = self.repository.update(&shortcut).await;
     let tera:Tera = TERA.read().unwrap().clone();
   
-    return match result {
+    match result {
       Ok(_) => {
-        let message: String = format!("Successfully updated shortcut!").clone();
+        let message: String = "Successfully updated shortcut!".to_string();
         let context: SuccessTemplate = SuccessTemplate { message, successful: true };
         
         context.get_html(tera)
@@ -122,7 +122,7 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
         
         context.get_html(tera)
       }
-    };
+    }
   }
   /// Retrieves a shortcut by keyword and returns a redirect to its URL.
   ///
@@ -131,8 +131,8 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
   ///
   /// # Returns
   /// - `Redirect` that redirects the user to the corresponding URL.
-  pub async fn get(&self, keyword: &String) -> Redirect {
-    return match self.repository.get(&keyword).await {
+  pub async fn get(&self, keyword: &str) -> Redirect {
+    return match self.repository.get(keyword).await {
       Ok(shortcut) =>Redirect::permanent(&shortcut.url),
       Err(ShortcutError::NotFound) => Redirect::permanent(&format!("/search?keyword={}", keyword)),
       Err(_) => Redirect::permanent(&(std::env::var("UI_URL").unwrap_or(String::from("http://localhost:3000")))),
@@ -261,7 +261,7 @@ mod shortcut_repository_tests {
       let input = PostRequest { keyword: "google".to_owned(), url: "https://google.co.uk".to_owned() };
       let result = shortcut_service.update(&input).await;
 
-      let message: String = format!("Successfully updated shortcut!").clone();
+      let message: String = "Successfully updated shortcut!".to_string();
       let tera:Tera = TERA.read().unwrap().clone();
       let context: SuccessTemplate = SuccessTemplate { message, successful: true };
       

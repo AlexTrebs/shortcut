@@ -1,5 +1,6 @@
 use crate::{error::ShortcutError, models::shortcut::Shortcut};
 
+#[allow(unused_imports)]
 use mockall::{predicate::*, automock};
 use rust_fuzzy_search::fuzzy_compare;
 use sqlx::{Error, Pool, Sqlite};
@@ -21,11 +22,6 @@ pub struct ShortcutRepository {
 #[cfg_attr(test, automock)]
 pub trait ShortcutRepositoryTrait {
   /// Creates a new instance of `ShortcutRepository`.
-  ///
-  /// # Example
-  /// ```
-  /// let repository = ShortcutRepository::new(pool);
-  /// ```
   fn new(database: Pool<Sqlite>) -> Self;
 
   /// A function to get the closest results for the given input using `rust_fuzzy_search`. 
@@ -39,20 +35,7 @@ pub trait ShortcutRepositoryTrait {
   /// 
   /// ## Returns
   /// - `Result<Vec<Shortcut>, ShortcutError>`, will a `Vec<Shortcut>` sorted by how similar to the search term if there are matches, `ShortcutError::NotFound`
-  ///                                           if there are no matching `Shortcut`'s, or `ShortcutError::FailedToSearch` if error occurs while retrieving.
-  /// 
-  /// ## Example
-  /// ```
-  /// let input: &str = "Search";
-  /// let results: Vec<Shortcut> = shortcutRepository.fuzzySearch(input).await.unwrap();
-  /// let expectedResults: Vec<Shortcut> = Vec::of(
-  ///   Shortcut::new(keyword: "search", url: ""), 
-  ///   Shortcut::new(keyword: "sea", url: ""), 
-  ///   Shortcut::new(keyword: "s", url: "")
-  /// );
-  /// 
-  /// assert_eq!(results, expectedResults);
-  /// ```
+  ///   if there are no matching `Shortcut`'s, or `ShortcutError::FailedToSearch` if error occurs while retrieving.
   async fn fuzzy_search(&self, search: &str) -> Result<Vec<Shortcut>, ShortcutError>;
 
   /// A function to get the `Shortcut` object given an inputed keyword.
@@ -62,17 +45,8 @@ pub trait ShortcutRepositoryTrait {
   /// 
   /// ## Returns
   /// - `Result<Shortcut, ShortcutError>`, will be the requested `Shortcut` if exists, `ShortcutError::NotFound` if the `Shortcut` doesn't exists,
-  ///                                      or `ShortcutError::FailedToGet` if error occurs while retrieving.
-  /// 
-  /// ## Example
-  /// ```
-  /// let input: &str = "Search";
-  /// let results: Shortcut = shortcutRepository.get(input).await.unwrap();
-  /// let expectedResults: Shortcut = Shortcut::new(keyword: "search", url: "");
-  /// 
-  /// assert_eq!(results, expectedResults);
-  /// ```
-  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError>;
+  ///   or `ShortcutError::FailedToGet` if error occurs while retrieving.
+  async fn get(&self, keyword: &str) -> Result<Shortcut, ShortcutError>;
 
   /// A function to create a `Shortcut` given an input `Shortcut` object.
   /// 
@@ -85,17 +59,7 @@ pub trait ShortcutRepositoryTrait {
   /// 
   /// ## Returns
   /// - `Result<bool, ShortcutError>`, will be true if successful, `ShortcutError::UniqueConstraintError` if the `Shortcut` already exists,
-  ///                                  or `ShortcutError::FailedToCreate` if error occurs while creating.
-  /// 
-  /// 
-  /// ## Example
-  /// ```
-  /// let input: Shortcut = Shortcut::new(keyword: "search", url: "");
-  /// let results: Shortcut = shortcutRepository.create(input).await.unwrap();
-  /// let expectedResults: bool = true;
-  /// 
-  /// assert_eq!(results, expectedResults);
-  /// ```
+  ///   or `ShortcutError::FailedToCreate` if error occurs while creating.
   async fn create(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
 
   /// A function to update a `Shortcut` given an inputed shortcut object.
@@ -109,16 +73,7 @@ pub trait ShortcutRepositoryTrait {
   /// 
   /// ## Returns
   /// - `Result<bool, ShortcutError>`, will be true if successful, false if nothing is updated, and `ShortcutError::FailedToUpdare`
-  ///                                  if an error occurs while updating.
-  /// 
-  /// ## Example
-  /// ```
-  /// let input: Shortcut = Shortcut::new(keyword: "search", url: "");
-  /// let results: Shortcut = shortcutRepository.create(input).await.unwrap();
-  /// let expectedResults: bool = true;
-  /// 
-  /// assert_eq!(results, expectedResults);
-  /// ```
+  ///   if an error occurs while updating.
   async fn update(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
 }
 
@@ -132,7 +87,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
       .fetch_all(&self.database)
       .await;
 
-    return match result {
+    match result {
       Ok(shortcuts) => {
         let mut matches:Vec<(f32, Shortcut)> = shortcuts.into_iter()
           .filter_map(|shortcut| {
@@ -145,7 +100,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
           })
           .collect();
 
-        if matches.len() == 0 {
+        if matches.is_empty() {
           return Err(ShortcutError::NoMatches);
         }
 
@@ -163,7 +118,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
     }
   }
 
-  async fn get(&self, keyword: &String) -> Result<Shortcut, ShortcutError> {
+  async fn get(&self, keyword: &str) -> Result<Shortcut, ShortcutError> {
     let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcuts WHERE keyword = ?1;"#, keyword)
       .fetch_one(&self.database).await;
 
@@ -305,7 +260,7 @@ mod shortcut_repository_tests {
     pool.execute(query).await.unwrap();
 
     // Verify count
-    return pool;
+    pool
   }
 
   async fn mock_pool() -> Pool<Sqlite> {
@@ -359,7 +314,7 @@ mod shortcut_repository_tests {
       let shortcut_repository: ShortcutRepository = setup().await;
       let result = shortcut_repository.create(&BING_SHORTCUT).await.unwrap();
   
-      assert_eq!(result, true);
+      assert!(result);
     }
   
     #[tokio::test]
@@ -381,7 +336,7 @@ mod shortcut_repository_tests {
       let shortcut_repository: ShortcutRepository = setup().await;
       let result = shortcut_repository.update(&GOOGLE_COM_SHORTCUT).await.unwrap();
       
-      assert_eq!(result, true);
+      assert!(result);
     }
   
     #[tokio::test]
@@ -389,7 +344,7 @@ mod shortcut_repository_tests {
       let shortcut_repository: ShortcutRepository = setup().await;
       let result = shortcut_repository.update(&BING_SHORTCUT).await.unwrap();
   
-      assert_eq!(result, false);
+      assert!(!result);
     }
   }
 
@@ -402,7 +357,7 @@ mod shortcut_repository_tests {
     async fn returns_one_entry_when_exists() {
       let input = "test";
       let shortcut_repository: ShortcutRepository = setup().await;
-      let result = shortcut_repository.fuzzy_search(&input).await.unwrap();
+      let result = shortcut_repository.fuzzy_search(input).await.unwrap();
  
       let expected = vec![TEST_SHORTCUT.to_owned()];
 
@@ -413,7 +368,7 @@ mod shortcut_repository_tests {
     async fn returns_ordered_multiple_entry_when_exists() {
       let input = "google";
       let shortcut_repository: ShortcutRepository = setup().await;
-      let result = shortcut_repository.fuzzy_search(&input).await.unwrap();
+      let result = shortcut_repository.fuzzy_search(input).await.unwrap();
  
       let expected = vec![
         GOOGLE_SHORTCUT.to_owned(), 
@@ -428,7 +383,7 @@ mod shortcut_repository_tests {
     async fn returns_error_when_no_matches_exists() {
       let input = "bing";
       let shortcut_repository: ShortcutRepository = setup().await;
-      let result = shortcut_repository.fuzzy_search(&input).await;
+      let result = shortcut_repository.fuzzy_search(input).await;
 
       assert!(matches!(result, Err(ShortcutError::NoMatches)));
     }
