@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -80,7 +80,7 @@ jobs:
       - name: Install sqlx-cli
         run: |
           cargo install cargo-binstall
-          cargo binstall sqlx-cli
+          cargo binstall sqlx-cli --force
 
       - name: Set-up Database
         env:
