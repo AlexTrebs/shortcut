@@ -3,12 +3,12 @@
   href="{{ shortcut.url }}"
 >
   <div class="w-full flex justify-between items-center">    
-    <h2 class="text-2xl font-bold mb-2 max-w-md ">{{ shortcut.keyword }}</h2>
-    <p href="{{ shortcut.url }}" class="line-clamp-3 max-w-md" >{{ shortcut.url }}</p>
+    <h2 class="text-2xl font-bold mb-2 max-w-[50%] wrap-break-word">{{ shortcut.keyword }}</h2>
+    <p href="{{ shortcut.url }}" class="line-clamp-3 max-w-[50%] wrap-break-word" >{{ shortcut.url }}</p>
   </div>
   <div class="w-full">
-    <p class="unix-time line-clamp-3 max-w-md" data-time="{{ shortcut.created }}" data-label="Created"></p>
-    <p class="unix-time line-clamp-3 max-w-md" data-time="{{ shortcut.updated }}" data-label="Updated"></p>
+    <p class="unix-time line-clamp-3 max-w-md wrap-break-word" data-time="{{ shortcut.created }}" data-label="Created"></p>
+    <p class="unix-time line-clamp-3 max-w-md wrap-break-word" data-time="{{ shortcut.updated }}" data-label="Updated"></p>
   </div>
   <script>
     document.querySelectorAll(".unix-time").forEach(element => {
