@@ -133,9 +133,9 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
   /// - `Redirect` that redirects the user to the corresponding URL.
   pub async fn get(&self, keyword: &str) -> Redirect {
     return match self.repository.get(keyword).await {
-      Ok(shortcut) =>Redirect::permanent(&shortcut.url),
-      Err(ShortcutError::NotFound) => Redirect::permanent(&format!("/search?keyword={}", keyword)),
-      Err(_) => Redirect::permanent(&(std::env::var("UI_URL").unwrap_or(String::from("http://localhost:3000")))),
+      Ok(shortcut) =>Redirect::to(&shortcut.url),
+      Err(ShortcutError::NotFound) => Redirect::to(&format!("/search?keyword={}", keyword)),
+      Err(_) => Redirect::to(&(std::env::var("UI_URL").unwrap_or(String::from("http://localhost:3000/")))),
     };
   }
 }
@@ -218,7 +218,7 @@ mod shortcut_repository_tests {
 
       let input = "google".to_string();
       let result = shortcut_service.get(&input).await;
-      let _expected_redirect = Redirect::permanent(&GOOGLE_SHORTCUT.url);
+      let _expected_redirect = Redirect::to(&GOOGLE_SHORTCUT.url);
 
       assert!(matches!(result, _expected_redirect))
     }
@@ -232,7 +232,7 @@ mod shortcut_repository_tests {
 
       let input = "google".to_string();
       let result = shortcut_service.get(&input).await;
-      let _expected_redirect = Redirect::permanent(&format!("/search?keyword={}", input));
+      let _expected_redirect = Redirect::to(&format!("/search?keyword={}", input));
 
       assert!(matches!(result, _expected_redirect))
     }

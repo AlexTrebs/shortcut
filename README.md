@@ -35,7 +35,7 @@ For this project to run you will require the following:
 
 ### 2. <a name="install"></a> Installation <small><sup>[Top ▲](#table-of-contents)</sup></small>
 
-This project is build with Cargo, pnpm, and SQLx-cli.
+This project is built with Cargo, pnpm, and SQLx-cli.
 
 If make was installed, these steps can be skipped with:     <sup float="right">[Skip ▼](#build)</sup>
 
@@ -44,7 +44,7 @@ make setup
 ```
 
 
-To setup the repository install the rust dependencies with: 
+To set-up the repository install the rust dependencies with: 
 
 ```sh
 cargo install
@@ -57,12 +57,12 @@ Next install the pnpm dependencies with:
 pnpm install
 ```
 
-Finally you will need to create and migrate the db with:
+Finally, you will need to create and migrate the db with:
 ```sh 
 sqlx db create
 sqlx migrate run
 ```
-or using the bash script:
+Or using the bash script:
 ```sh
 ./migrations.sh
 ```
@@ -83,7 +83,7 @@ or
 npx @tailwindcss/cli -i ./ui/styles/tailwind.css -o ./ui/assets/main.css
 ```
 
-This is required to setup the css styling over the project. 
+This is required to set-up the css styling for the project. 
 
 Following that run:
 
@@ -94,7 +94,7 @@ or
 ```sh
 RUST_LOG=info cargo watch -x run
 ```
-This will start the rust server up. Once built, you can access the app at: http://localhost:3000, or your configured port.
+This will start the Rust server. Once built, you can access the app at http://localhost:3000 or your configured port.
 
 ## 4. <a name="setup"></a> Setup <small><sup>[Top ▲](#table-of-contents)</sup></small>
 
@@ -136,15 +136,15 @@ Following this you will need to set up a shortcut for your search bar. Given you
 
 ## 5. <a name="arch"></a> Architecture <small><sup>[Top ▲](#table-of-contents)</sup></small>
 
-This project is a Rust HTMX monolith applications.
+This project is a Rust HTMX monolith application.
 
-[HTMX](https://htmx.org) is a lightweight HTML templating structure, that allows you to to swap elements in the DOM with api responses.
+[HTMX](https://htmx.org) is a lightweight HTML templating structure that allows you to swap elements in the DOM through function returns.
 
-For the templating system, we are using [Tera](https://docs.rs/tera/latest/tera/), which uses Jinga inspired templates.
+For the templating system, we are using [Tera](https://docs.rs/tera/latest/tera/), which uses Jinga-inspired templates.
 
-With Tera, we have chose to use the [tera-hot-reload](https://github.com/oxidlabs/tera-hot-reload) crate. This allows for quick and easy development of the ui.
+With Tera, we have chosen to use the [tera-hot-reload](https://github.com/oxidlabs/tera-hot-reload) crate. This allows for quick and easy development of the ui.
  
-Roulghy a page template can be describe similar as below:
+Roughly a page template can be described like below:
 
 ```rust
 #[derive(TeraTemplate, Serialize)]
@@ -176,7 +176,7 @@ Where an example template.html can be:
 {% endblock %}
 ```
 
-With api calls we can then set the results div as out output of a function.
+With api calls, we then set the results div as the target for the output of a function. 
 
 More examples of this can be seen in: 
 - [HTMX templates directory](ui/templates)
@@ -184,13 +184,13 @@ More examples of this can be seen in:
 - [Routes](src/routes/shortcut.rs)
 - [Service](src/service/shortcut.rs)
 
-The interaction between our server and our database is using [sqlx](https://docs.rs/sqlx/latest/sqlx/).
+The interaction between our server and our database is [sqlx](https://docs.rs/sqlx/latest/sqlx/).
 
-In an ideal world, I would use [sqlean](https://github.com/nalgeon/sqlean), [spellfix1](https://sqlite.org/spellfix1.html) extension, or [elastic-rs](https://github.com/elastic/elasticsearch-rs?tab=readme-ov-file) to allow fuzzysearching within the database. 
+In an ideal world, I would use [sqlean](https://github.com/nalgeon/sqlean), [spellfix1](https://sqlite.org/spellfix1.html) extension, or [elastic-rs](https://github.com/elastic/elasticsearch-rs?tab=readme-ov-file) to allow fuzzy searching within the database. 
 
-But for simplicities sake, we are currently using a [SQLite](https://sqlite.org) database without any extensions.
+But for simplicity's sake, we are currently using a [SQLite](https://sqlite.org) database without any extensions.
 
-This means for our searches, it will require pulling the entired shortcut database, and searching/sorting within the Rust layer which is not as bad as you think due to Rust's fast nature.
+This means that our searches will require pulling the entire shortcut database and searching/sorting within the Rust layer. This in practice is not as bad as you think due to Rust's fast nature.
 
 Finally, we use [tailwind](https://tailwindcss.com) for our component styling.
 
@@ -209,4 +209,4 @@ UI_URL=http://localhost:${PORT}
 
 ## 7. <a name="faqs"></a> FAQ's <small><sup>[Top ▲](#table-of-contents)</sup></small>
 
-Feel free to create anny issues at: https://github.com/AlexTrebs/shortcut/issues
+Feel free to create any issues at: https://github.com/AlexTrebs/shortcut/issues

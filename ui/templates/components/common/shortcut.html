@@ -1,5 +1,5 @@
 <a
-  class="group flex flex-col justify-start items-start gap-2 w-full dark:text-white duration-500 relative rounded-lg p-4 dark:bg-neutral-900 hover:-translate-y-2 hover:shadow-xl shadow-gray-300"
+  class="group m-2 flex flex-col justify-start items-start gap-2 w-full text-black dark:text-white duration-500 relative rounded-lg p-4 bg-blue-200 dark:bg-neutral-900 hover:-translate-y-2 hover:shadow-xl shadow-gray-500 dark:shadow-gray-300"
   href="{{ shortcut.url }}"
 >
   <div class="w-full flex justify-between items-center">    
@@ -12,24 +12,22 @@
   </div>
   <script>
     document.querySelectorAll(".unix-time").forEach(element => {
-      console.log(element);
-        const unixTimestamp = parseInt(element.getAttribute("data-time"));
-      console.log(unixTimestamp);
+      const unixTimestamp = parseInt(element.getAttribute("data-time"));
 
-        if (!isNaN(unixTimestamp)) {
-            const date = new Date(unixTimestamp * 1000).toLocaleString(undefined, {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                timeZoneName: "short"
-            });
+      if (!isNaN(unixTimestamp)) {
+        const date = new Date(unixTimestamp * 1000).toLocaleString(undefined, {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZoneName: "short"
+        });
 
-            const label = element.getAttribute("data-label"); // Get label from attribute
-            element.textContent = `${label}: ${date}`;
-        }
+        const label = element.getAttribute("data-label"); // Get label from attribute
+        element.textContent = `${label}: ${date}`;
+      }
     });
   </script>
 </a>
