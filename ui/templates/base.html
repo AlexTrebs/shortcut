@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <link href="/assets/main.css" rel="stylesheet" />
+    <link href="/assets/theme_toggle.css" rel="stylesheet" />
     <link rel="icon" type="image/x-icon" href="/assets/icon.ico">
     <title>{% block title %}{{ title }}{% endblock %}</title>
 
@@ -13,14 +14,11 @@
   </head>
   <body>
     <div id="contents" >
-      <div class="flex flex-col h-screen dark:bg-neutral-900">
-      <header
-        class="header flex items-center px-4 border-b h-14 bg-neutral-100/40 dark:bg-neutral-800/40"
-      >
-        <h1 class="text-lg font-semibold dark:text-white">Shortcuts</h1>
-      </header>
-      {% include "components/common/sidebar.html" %}
-      {% block content %}{% endblock %}
-    </div></div>
+      <div class="flex flex-col h-screen bg-blue-300 dark:bg-neutral-900">
+        {% include "components/common/header.html" %}
+        {% include "components/common/sidebar.html" %}
+        {% block content %}{% endblock %}
+      </div>
+    </div>
   </body>
 </html>

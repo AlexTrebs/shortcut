@@ -1,4 +1,5 @@
-// use crate::models::shortcut::Shortcut;
+#[allow(unused_imports)]
+use crate::models::shortcut::Shortcut;
 
 use std::{env, str::FromStr};
 use sqlx::{sqlite::{SqlitePool, SqliteConnectOptions}, Pool, Sqlite};
