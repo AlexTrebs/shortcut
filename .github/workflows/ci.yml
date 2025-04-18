@@ -18,21 +18,23 @@ jobs:
           - 'ubuntu-latest'
         rust: 
           - stable
-
+        # - nightly
     runs-on: ${{ matrix.os }}
+    # If you add nightly tooling and want to continue on errors, you already have this:
     continue-on-error: ${{ matrix.rust == 'nightly' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Rust
+      - name: Set up Rust cache
         uses: Swatinem/rust-cache@v2
         env:
           cache-name: ci
         with:
           shared-key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}
 
-      - name: Install Rust
+      - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -48,7 +50,7 @@ jobs:
           npm install -g pnpm
           pnpm install
 
-  build: 
+  build:
     strategy:
       fail-fast: false
       matrix:
@@ -56,21 +58,21 @@ jobs:
           - 'ubuntu-latest'
         rust: 
           - stable
-
     runs-on: ${{ matrix.os }}
     needs: install
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Restore cargo cache
+      - name: Restore Cargo Cache
         uses: Swatinem/rust-cache@v2
         env:
           cache-name: ci
         with:
           key: ${{ matrix.os }}-${{ env.cache-name }}-${{ matrix.rust }}
 
-      - name: Install Rust
+      - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
@@ -88,19 +90,20 @@ jobs:
           sqlx db create
           sqlx migrate run --source ./migrations
 
-      - name: Build
+      - name: Build Project
         run: cargo build
 
-      - name: Run tests
+      - name: Run Tests
         run: cargo test
 
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Run Application
+      - name: Run Application and Verify Health
         run: |
-          cargo run &
-          sleep 10 # Wait for the server to start
-
-      - name: Verify Application is Running
-        run: curl -f http://localhost:3000/healthcheck
+          echo "Starting application in background..."
+          nohup cargo run > server.log 2>&1 &
+          echo "Waiting for server to start..."
+          # Wait up to 30 seconds for healthcheck
+          timeout 30 bash -c 'until curl -fs http://localhost:3000/healthcheck; do echo "Waiting for server..."; sleep 2; done'
+          echo "Server is up and running."

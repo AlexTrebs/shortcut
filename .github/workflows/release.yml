@@ -3,34 +3,71 @@ name: Post-Release Workflow
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
   release:
     if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/')
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Get new version from package.json or Cargo.toml
+      # Step 2: Get new version from package.json (and fallback to Cargo.toml if needed)
       - name: Get new version
         id: get_version
+        shell: bash
         run: |
-          NEW_VERSION=$(jq -r ".version" package.json)
+          set -e
+          echo "Extracting version from package.json..."
+          NEW_VERSION=$(jq -r ".version" package.json 2>/dev/null || echo "")
+
+          if [ -z "$NEW_VERSION" ] || [ "$NEW_VERSION" = "null" ]; then
+            echo "No version found in package.json; falling back to Cargo.toml..."
+            NEW_VERSION=$(grep '^version = ' Cargo.toml | head -n 1 | sed -E 's/version = "(.*)"/\1/')
+          fi
+          if [ -z "$NEW_VERSION" ]; then
+            echo "ERROR: Could not determine new version."
+            exit 1
+          fi
+          
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "::set-output name=new_version::$NEW_VERSION"
+          echo "New version is: $NEW_VERSION"
 
-      # Step 3: Create Git Tag
-      - name: Create Git Tag
+      # (Optional) Step 2.5: Debug – show main’s version to ensure main isn’t already updated.
+      - name: Debug - Show version in main
+        shell: bash
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git tag -a v${{ env.NEW_VERSION }} -m "Release v${{ env.NEW_VERSION }}"
-          git push origin v${{ env.NEW_VERSION }}
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:package.json | jq -r '.version')
+          echo "origin/main version: $MAIN_VERSION"
 
-      # Step 4: Create GitHub Release
+          if [ "$MAIN_VERSION" = "${{ env.NEW_VERSION }}" ]; then
+            echo "origin/main is already updated to version $MAIN_VERSION. Exiting."
+            exit 0
+          fi
+
+      # Step 3: Create Git Tag (if it doesn't exist already)
+      - name: Create Git Tag
+        shell: bash
+        run: |
+          set -e
+          TAG="v${{ env.NEW_VERSION }}"
+          
+          # Check if the tag already exists on remote.
+          if git ls-remote --tags origin | grep -q "refs/tags/$TAG"; then
+            echo "Tag $TAG already exists; skipping tag creation."
+          else
+            echo "Creating tag $TAG..."
+            git config --global user.name "GitHub Actions"
+            git config --global user.email "actions@github.com"
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+          fi
+
+      # Step 4: Create GitHub Release using softprops action
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:

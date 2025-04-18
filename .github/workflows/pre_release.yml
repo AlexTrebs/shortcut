@@ -2,57 +2,54 @@ name: Pre-Release Workflow
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
 
 jobs:
   version-update:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repository
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Get current version from the latest tag
+      # Step 2: Get current version from tag or Cargo.toml
       - name: Get current version
         id: get_version
         run: |
-          # Try to get the version from the latest tag
           if git tag -l | grep -q "."; then
             VERSION=$(git describe --tags --abbrev=0)
           else
-            # Fallback: Extract version from Cargo.toml
             VERSION=$(grep '^version = ' Cargo.toml | head -n 1 | sed -E 's/version = "(.*)"/\1/')
           fi
-          VERSION=${VERSION#v} # Remove the 'v' prefix if present
+          # Normalize version (remove leading "v" if present)
+          VERSION=${VERSION#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Current version is: $VERSION"
 
-      # Step 2: Fetch branch name of the most recently merged PR
+      # Step 3: Get branch name of the most recently merged PR
       - name: Get branch name of most recently merged PR
         id: get_branch_name
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           API_URL="https://api.github.com/repos/${{ github.repository }}/pulls?state=closed&per_page=1"
-          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" $API_URL)
-          BRANCH_NAME=$(echo $RESPONSE | jq -r '.[0].head.ref')
+          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" "$API_URL")
+
+          BRANCH_NAME=$(echo "$RESPONSE" | jq -r '.[0].head.ref')
+
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "The most recently merged PR came from branch: $BRANCH_NAME"
 
-      # Step 3: Use the branch name
-      - name: Use the branch name
-        run: |
-          echo "The branch name of the most recently merged PR is: ${{ env.BRANCH_NAME }}"
-
-      # Step 3: Determine next version
+      # Step 4: Determine the next version based on branch prefix
       - name: Determine next version
         id: versioning
         run: |
-          CURRENT_VERSION=${{ env.VERSION }}
-          MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-          MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-          PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+          CURRENT_VERSION="${{ env.VERSION }}"
+          
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+          PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
 
-          # Determine version increment based on branch prefix
           if [[ "${{ env.BRANCH_NAME }}" == breaking/* ]]; then
             MAJOR=$((MAJOR + 1))
             MINOR=0
@@ -63,105 +60,86 @@ jobs:
           elif [[ "${{ env.BRANCH_NAME }}" == bugfix/* ]]; then
             PATCH=$((PATCH + 1))
           fi
-
-          NEW_VERSION="$MAJOR.$MINOR.$PATCH" # Construct the new version
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "RELEASE_BRANCH=release/$NEW_VERSION" >> $GITHUB_ENV
-          
-      # Step 4: Check if release branch with a larger version already exists
-      - name: Check for existing release branches
-        id: check_existing_release
+          echo "Next version determined: $NEW_VERSION; Release branch: release/$NEW_VERSION"
+
+      # (Optional) Debug: Exit early if main is already updated
+      - name: Debug - Show version in main
         run: |
-          git fetch origin
-          EXISTING_BRANCH=$(git branch -r | grep "origin/release/" | grep -v "origin/release/$NEW_VERSION" | sed 's|origin/release/||' | sort -V | tail -n 1)
-          if [[ -n "$EXISTING_BRANCH" && "$EXISTING_BRANCH" > "$NEW_VERSION" ]]; then
-            echo "EXISTING_BRANCH=$EXISTING_BRANCH" >> $GITHUB_ENV
-            echo "RELEASE_BRANCH_EXISTS=true" >> $GITHUB_ENV
-          else
-            echo "RELEASE_BRANCH_EXISTS=false" >> $GITHUB_ENV
+          git fetch origin main
+          MAIN_VERSION=$(git show origin/main:package.json | jq -r '.version')
+          echo "Version from origin/main: $MAIN_VERSION"
+
+          if [ "$MAIN_VERSION" = "${{ env.NEW_VERSION }}" ]; then
+            echo "origin/main is already updated to version $MAIN_VERSION. Exiting."
+            exit 0
           fi
 
-      # Step 5: Update or Replace Release Branch
+      # Step 5: Create or update the release branch without wiping out your new commit
       - name: Create or Update Release Branch
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          
-          # Ensure we have the latest info
           git fetch origin
-          
-          if [ "${{ env.RELEASE_BRANCH_EXISTS }}" == "true" ]; then
-            # If the release branch exists, check it out
-            git checkout release/${{ env.EXISTING_BRANCH }}
-            # Make sure we have the latest main changes
-            git fetch origin main
-            #
-            # Identify the version update commit(s) – the commit(s) on release/branch
-            # that are not present in origin/main.
-            #
-            # In our case we expect one commit (the update to package files)
-            COMMIT=$(git rev-list origin/main..HEAD --max-count=1)
-            echo "Identified version update commit: $COMMIT"
-            if [ -z "$COMMIT" ]; then
-              echo "No version update commit found (branch may already be in sync with main)."
-              exit 0
-            fi
-            #
-            # Reset the release branch to the latest main
-            git reset --hard origin/main
-            #
-            # Cherry-pick the version update commit onto the updated branch.
-            # The "-X theirs" option lets the changes from the commit override in-cherry-pick conflicts.
-            git cherry-pick -X theirs $COMMIT || (echo "Cherry-pick failed; please resolve conflicts manually." && exit 1)
-            #
-            # Force push the updated branch (since history was rewritten)
-            git push origin release/${{ env.EXISTING_BRANCH }} --force
+
+          BRANCH="${{ env.RELEASE_BRANCH }}"
+
+          # Check if the branch exists remotely
+          if git ls-remote --exit-code --heads origin "$BRANCH"; then
+            echo "Release branch exists. Checking out $BRANCH..."
+            git checkout "$BRANCH"
+            # Ensure it tracks origin/$BRANCH (unset any upstream then set it properly)
+            git branch --unset-upstream || true
+            git branch --set-upstream-to=origin/"$BRANCH" "$BRANCH"
+
+            git merge origin/main --no-edit
           else
-            # Else: No release branch exists yet
-            if [ -n "${{ env.EXISTING_BRANCH }}" ]; then
-              git push origin --delete release/${{ env.EXISTING_BRANCH }}
-            fi
-
-            # Create a new release branch from the latest main
-            git checkout -b ${{ env.RELEASE_BRANCH }} origin/main
+            echo "Creating new release branch $BRANCH from origin/main..."
+            git checkout -B "$BRANCH" origin/main
+            git push origin "$BRANCH" --set-upstream --force-with-lease
           fi
+          echo "Current upstream: $(git rev-parse --abbrev-ref --symbolic-full-name @{u})"
+          echo "Current branch: $(git branch --show-current)"
 
+          git log --oneline -5
 
       # Step 6: Update version in package.json and Cargo.toml
       - name: Update version files
         run: |
-          jq ".version = \"$NEW_VERSION\"" package.json > temp.json && mv temp.json package.json
-          sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+          echo "Updating version files to version ${{ env.NEW_VERSION }}..."
+          jq --arg newver "${{ env.NEW_VERSION }}" '.version = $newver' package.json > temp.json && mv temp.json package.json
+          
+          # Use sed to update Cargo.toml with a flexible regex
+          sed -E -i "s/^(version\s*=\s*\").*(\")/\1${{ env.NEW_VERSION }}\2/" Cargo.toml
+          echo "Updated package.json:"
+          cat package.json
+          echo "Updated Cargo.toml (version line):"
+          grep "^version" Cargo.toml
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
 
-      # Configure lightweight commit signing
-      - name: Configure lightweight commit signing
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git config --global commit.gpgsign false
-          git config --global gpg.program true # Use GitHub's token-based verification
-
-      # Step 7: Commit version updates to the release branch
+      # Step 7: Commit version updates to the release branch (and add a dummy file to force a diff if needed)
       - name: Commit version updates
         run: |
-          git add package.json Cargo.toml
-          git commit -m "Update version to $NEW_VERSION"
-          git push origin ${{ env.RELEASE_BRANCH }}
+          git checkout "${{ env.RELEASE_BRANCH }}"
+          # Optionally, add a dummy file that forces a diff so the PR always shows changes.
+          echo "Release version: ${{ env.NEW_VERSION }} updated at $(date)" > release-info.txt
+          git add package.json Cargo.toml release-info.txt
+          if ! git diff-index --quiet HEAD --; then
+            git commit -m "Update version to ${{ env.NEW_VERSION }}"
+            git push origin "${{ env.RELEASE_BRANCH }}" --force-with-lease
+            echo "Version update committed and pushed."
+          else
+            echo "No changes detected in version files."
+          fi
+          git log --oneline -3
 
-      # Step 8: Create or Update Pull Request
-      - name: Create or Update Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.RELEASE_BRANCH }}
-          title: "Release $NEW_VERSION"
-          body: |
-            This pull request prepares the release of version $NEW_VERSION.
-            It contains the following changes:
-            - Updated `package.json` and `Cargo.toml` to version $NEW_VERSION.
-          base: main
-          labels: |
-            automated
-            release
+      # Step 8: Create the pull request using the GitHub CLI (ensure gh is available)
+      - name: Create pull request
+        run: |
+          echo "Creating pull request for release ${{ env.NEW_VERSION }}..."
+          gh pr create -B main -H "${{ env.RELEASE_BRANCH }}" --title "Release ${{ env.NEW_VERSION }}" --body "This pull request prepares the release of version ${{ env.NEW_VERSION }}."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
