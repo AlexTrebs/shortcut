@@ -139,7 +139,15 @@ jobs:
       # Step 8: Create the pull request using the GitHub CLI (ensure gh is available)
       - name: Create pull request
         run: |
-          echo "Creating pull request for release ${{ env.NEW_VERSION }}..."
-          gh pr create -B main -H "${{ env.RELEASE_BRANCH }}" --title "Release ${{ env.NEW_VERSION }}" --body "This pull request prepares the release of version ${{ env.NEW_VERSION }}."
+          echo "Checking for an existing PR for branch ${{ env.RELEASE_BRANCH }}..."
+          existing_pr=$(gh pr list --head "${{ env.RELEASE_BRANCH }}" --base main --state open -q ".[].url")
+          if [ -n "$existing_pr" ]; then
+            echo "A PR already exists: $existing_pr. Skipping creation."
+          else
+            echo "No existing PR found, creating a new one for release ${{ env.NEW_VERSION }}..."
+            gh pr create -B main -H "${{ env.RELEASE_BRANCH }}" \
+              --title "Release ${{ env.NEW_VERSION }}" \
+              --body "This pull request prepares the release of version ${{ env.NEW_VERSION }}."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
