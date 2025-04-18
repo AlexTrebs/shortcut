@@ -117,18 +117,13 @@ jobs:
             # Force push the updated branch (since history was rewritten)
             git push origin release/${{ env.EXISTING_BRANCH }} --force
           else
-            # If no release branch exists:
-            # If a lower version branch exists, delete it:
+            # Else: No release branch exists yet
             if [ -n "${{ env.EXISTING_BRANCH }}" ]; then
               git push origin --delete release/${{ env.EXISTING_BRANCH }}
             fi
+
             # Create a new release branch from the latest main
             git checkout -b ${{ env.RELEASE_BRANCH }} origin/main
-            #
-            # Add the version update commit from the working directory
-            git add package.json Cargo.toml
-            git commit -m "Update version to $NEW_VERSION"
-            git push origin ${{ env.RELEASE_BRANCH }}
           fi
 
 
