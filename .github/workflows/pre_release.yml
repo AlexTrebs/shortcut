@@ -16,7 +16,16 @@ jobs:
       # Step 2: Get current version from the latest tag
       - name: Get current version
         id: get_version
-        run: echo "VERSION=$(git describe --tags --abbrev=0 || echo '0.0.0')" >> $GITHUB_ENV
+        run: |
+          # Try to get the version from the latest tag
+          if git tag -l | grep -q "."; then
+            VERSION=$(git describe --tags --abbrev=0)
+          else
+            # Fallback: Extract version from Cargo.toml
+            VERSION=$(grep '^version = ' Cargo.toml | head -n 1 | sed -E 's/version = "(.*)"/\1/')
+          fi
+          VERSION=${VERSION#v} # Remove the 'v' prefix if present
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       # Step 3: Determine next version
       - name: Determine next version
@@ -26,37 +35,56 @@ jobs:
           MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
           MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
-          
-          # Increment the minor version for demonstration
-          NEW_VERSION="$MAJOR.$((MINOR + 1)).$PATCH"
+
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}" # Get the branch name
+
+          # Determine version increment based on branch prefix
+          if [[ "$BRANCH_NAME" == breaking/* ]]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [[ "$BRANCH_NAME" == feature/* ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          elif [[ "$BRANCH_NAME" == bugfix/* ]]; then
+            PATCH=$((PATCH + 1))
+          fi
+
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH" # Construct the new version
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "RELEASE_BRANCH=release/$NEW_VERSION" >> $GITHUB_ENV
-
-      # Step 4: Check if release branch already exists
-      - name: Check if release branch exists
-        id: check_release_branch
+          
+      # Step 4: Check if release branch with a larger version already exists
+      - name: Check for existing release branches
+        id: check_existing_release
         run: |
           git fetch origin
-          if git branch -r | grep "origin/${{ env.RELEASE_BRANCH }}"; then
+          EXISTING_BRANCH=$(git branch -r | grep "origin/release/" | grep -v "origin/release/$NEW_VERSION" | sed 's|origin/release/||' | sort -V | tail -n 1)
+          if [[ -n "$EXISTING_BRANCH" && "$EXISTING_BRANCH" > "$NEW_VERSION" ]]; then
+            echo "EXISTING_BRANCH=$EXISTING_BRANCH" >> $GITHUB_ENV
             echo "RELEASE_BRANCH_EXISTS=true" >> $GITHUB_ENV
           else
             echo "RELEASE_BRANCH_EXISTS=false" >> $GITHUB_ENV
           fi
 
-      # Step 5: Merge or Create Release Branch
+      # Step 5: Update or Replace Release Branch
       - name: Create or Update Release Branch
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           if [ "${{ env.RELEASE_BRANCH_EXISTS }}" == "true" ]; then
-            # If the branch exists, merge the latest changes from main
-            git checkout ${{ env.RELEASE_BRANCH }}
+            # If a larger release branch exists, update it
+            git checkout release/${{ env.EXISTING_BRANCH }}
             git merge origin/main
+            git push origin release/${{ env.EXISTING_BRANCH }}
           else
-            # If the branch does not exist, create it
+            # Close existing branches and create a new higher version branch
+            if [ -n "${{ env.EXISTING_BRANCH }}" ]; then
+              git push origin --delete release/${{ env.EXISTING_BRANCH }}
+            fi
             git checkout -b ${{ env.RELEASE_BRANCH }}
+            git push origin ${{ env.RELEASE_BRANCH }}
           fi
-          git push origin ${{ env.RELEASE_BRANCH }}
 
       # Step 6: Update version in package.json and Cargo.toml
       - name: Update version files
@@ -66,9 +94,33 @@ jobs:
         env:
           NEW_VERSION: ${{ env.NEW_VERSION }}
 
+      # Configure lightweight commit signing
+      - name: Configure lightweight commit signing
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git config --global commit.gpgsign false
+          git config --global gpg.program true # Use GitHub's token-based verification
+
       # Step 7: Commit version updates to the release branch
       - name: Commit version updates
         run: |
           git add package.json Cargo.toml
           git commit -m "Update version to $NEW_VERSION"
           git push origin ${{ env.RELEASE_BRANCH }}
+
+      # Step 8: Create or Update Pull Request
+      - name: Create or Update Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.RELEASE_BRANCH }}
+          title: "Release $NEW_VERSION"
+          body: |
+            This pull request prepares the release of version $NEW_VERSION.
+            It contains the following changes:
+            - Updated `package.json` and `Cargo.toml` to version $NEW_VERSION.
+          base: main
+          labels: |
+            automated
+            release
