@@ -140,7 +140,7 @@ jobs:
       - name: Create pull request
         run: |
           echo "Checking for an existing PR for branch ${{ env.RELEASE_BRANCH }}..."
-          existing_pr=$(gh pr list --head "${{ env.RELEASE_BRANCH }}" --base main --state open -q ".[].url")
+          existing_pr=$(gh pr list --head "${{ env.RELEASE_BRANCH }}" --base main --state open --json url -q '.[0].url')
           if [ -n "$existing_pr" ]; then
             echo "A PR already exists: $existing_pr. Skipping creation."
           else
@@ -151,3 +151,4 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
