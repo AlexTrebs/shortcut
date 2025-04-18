@@ -1,0 +1,52 @@
+<div 
+  id="dialog_{{status}}_{{keyword}}_{{action}}"
+  data-status="{{status}}_{{keyword}}_{{action}}" 
+  class="flex flex-col gap-2 w-auto w-min-60 sm:w-72 text-[10px] sm:text-xs z-50 px-4 transition-opacity duration-300 ease-in-out"
+  hx-remove-me="10s"
+>
+  <div
+    class="cursor-default flex items-center justify-between w-full h-12 sm:h-14 rounded-lg bg-blue-200 dark:bg-neutral-900 px-[10px]"
+  >
+    <div class="flex gap-2">
+      {% block icon %}{% endblock %}
+      <div>
+        <p class="text-black dark:text-white">{{ title }}</p>
+        <p class="text-gray-600 dark:text-gray-500">{{ message }}</p>
+      </div>
+    </div>
+    <button
+      class="text-gray-600 text-gray-600 hover:bg-white/5 p-1 rounded-md transition-colors ease-linear"
+      onclick="removeDialog('dialog_{{status}}_{{keyword}}_{{action}}')"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-6 h-6"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M6 18 18 6M6 6l12 12"
+        ></path>
+      </svg>
+    </button>
+  </div>
+  <script>
+    setTimeout(() => {
+      removeDialog("dialog_{{status}}_{{keyword}}_{{action}}");
+    }, 10000); // 10 seconds
+  
+    function removeDialog(dialogId) {
+      const dialog = document.getElementById(dialogId);
+      console.log(dialog);
+      if (dialog) {
+        // Add fade-out animation
+        dialog.style.opacity = "0";
+        setTimeout(() => dialog.remove(), 300); // Match CSS transition duration
+      }
+    }
+  </script>
+</div>

@@ -3,7 +3,7 @@ use crate::{
   macros::renderable::Renderable,
   models::shortcut::{PostRequest, Shortcut}, 
   repository::shortcut::ShortcutRepositoryTrait, 
-  templates::components::{CheckUpdateTemplate, CreateNewTemplate, ErrorTemplate, InfoTemplate, SearchResultsTemplate, SuccessTemplate}, 
+  templates::components::{CheckUpdateTemplate, CreateNewTemplate, ErrorDialog, ErrorAlert, InfoDialog, InfoAlert, SearchResultsTemplate, SuccessDialog, SuccessAlert}, 
   TERA
 };
 
@@ -47,7 +47,7 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
         context.get_html(tera)
       }
       Err(err) => {
-        let context: ErrorTemplate = ErrorTemplate { error:err.to_string(), successful: false };
+        let context: ErrorAlert = ErrorAlert { error:err.to_string(), successful: false };
         
         context.get_html(tera)
       }
@@ -68,14 +68,14 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
   
     match result {
       Ok(_) => {
-        let context: SuccessTemplate = SuccessTemplate { message: "Successfully created shortcut!".into(), successful: true };
+        let context: SuccessAlert = SuccessAlert { message: "Successfully created shortcut!".into(), successful: true };
   
         context.get_html(tera)
       },
       Err(ShortcutError::UniqueConstraintError) => match self.repository.get(&new_shortcut.keyword).await {
         Ok(shortcut_to_update) => {
           if shortcut_to_update.url == new_shortcut.url {
-            let context = InfoTemplate { message: "Shortcut already added.".into(), successful: true };
+            let context = InfoAlert { message: "Shortcut already added.".into(), successful: true };
             
             context.get_html(tera)
           } else {
@@ -85,13 +85,13 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
           }
         },
         Err(err) => {
-          let context: ErrorTemplate = ErrorTemplate { error:err.to_string(), successful: false };
+          let context: ErrorAlert = ErrorAlert { error:err.to_string(), successful: false };
           
           context.get_html(tera)
         }
       },
       Err(err) => {
-        let context: ErrorTemplate = ErrorTemplate { error:err.to_string(), successful: false };
+        let context: ErrorAlert = ErrorAlert { error:err.to_string(), successful: false };
         
         context.get_html(tera)
       }
@@ -111,19 +111,62 @@ impl <R: ShortcutRepositoryTrait + Send + Sync> ShortcutService<R> {
     let tera:Tera = TERA.read().unwrap().clone();
   
     match result {
-      Ok(_) => {
-        let message: String = "Successfully updated shortcut!".to_string();
-        let context: SuccessTemplate = SuccessTemplate { message, successful: true };
-        
-        context.get_html(tera)
+      Ok(res) => {
+        if res {
+          let message: String = "Successfully updated shortcut!".to_string();
+          let context: SuccessAlert = SuccessAlert { message, successful: true };
+          
+          context.get_html(tera)
+        } else {
+          let message: String = "Shortcut could not be found!".to_string();
+          let context: InfoAlert = InfoAlert { message, successful: true };
+          
+          context.get_html(tera)
+        }
       },
       Err(err) => {
-        let context: ErrorTemplate = ErrorTemplate { error:err.to_string(), successful: false };
+        let context: ErrorAlert = ErrorAlert { error:err.to_string(), successful: false };
         
         context.get_html(tera)
       }
     }
   }
+
+  /// Deletes an existing shortcut.
+  ///
+  /// # Parameters
+  /// - `req`: The keyword for shortcut to delete.
+  ///
+  /// # Returns
+  /// - `Html<String>` indicating success or failure.
+  pub async fn delete(&self, keyword: &str) -> Html<String> {
+    let result: Result<bool, ShortcutError> = self.repository.delete(keyword).await;
+    let tera:Tera = TERA.read().unwrap().clone();
+    let action = "delete".to_owned();
+    match result {
+      Ok(true) => {
+        let title: String = "Successfully deleted shortcut!".to_string();
+        let message: String = format!("Deleted shortcut for keyword: {}", keyword).to_string();
+        let context: SuccessDialog = SuccessDialog { title, message, keyword: keyword.to_owned(), action, status: "success".to_string() };
+        
+        context.get_html(tera)
+      },  
+      Ok(false) => {
+        let title: String = "Shortcut could not be found!".to_string();
+        let message: String = format!("Could not delete shortcut for keyword: {}", keyword).to_string();
+        let context: InfoDialog = InfoDialog { title, message, keyword: keyword.to_owned(), action, status: "info".to_string() };
+        
+        context.get_html(tera)
+      },
+      Err(err) => {
+        let title: String = "Error while deleting shortcut!".to_string();
+        let context: ErrorDialog = ErrorDialog { title, message:err.to_string(), keyword: keyword.to_owned(), action, status: "error".to_string() };
+        
+        context.get_html(tera)
+      }
+    }
+  }
+
   /// Retrieves a shortcut by keyword and returns a redirect to its URL.
   ///
   /// # Parameters
@@ -247,7 +290,7 @@ mod shortcut_repository_tests {
       models::shortcut::PostRequest, 
       repository::shortcut::MockShortcutRepositoryTrait, 
       service::shortcut::ShortcutService,
-      templates::components::{ErrorTemplate, SuccessTemplate}, 
+      templates::components::{ErrorAlert, InfoAlert, SuccessAlert}, 
       TERA
     };
 
@@ -263,7 +306,26 @@ mod shortcut_repository_tests {
 
       let message: String = "Successfully updated shortcut!".to_string();
       let tera:Tera = TERA.read().unwrap().clone();
-      let context: SuccessTemplate = SuccessTemplate { message, successful: true };
+      let context: SuccessAlert = SuccessAlert { message, successful: true };
+      
+      let _expected_result = context.get_html(tera);
+
+      assert_eq!(result.0, _expected_result.0)
+    }
+
+    #[tokio::test]
+    async fn return_info_html_when_no_entry_found() {
+      let mut mock: MockShortcutRepositoryTrait = MockShortcutRepositoryTrait::default(); 
+      mock.expect_update().returning(|_| Ok(false));
+
+      let shortcut_service = ShortcutService::new(mock);
+
+      let input = PostRequest { keyword: "google".to_owned(), url: "https://google.co.uk".to_owned() };
+      let result = shortcut_service.update(&input).await;
+
+      let tera:Tera = TERA.read().unwrap().clone();
+      let message: String = "Shortcut could not be found!".to_string();
+      let context: InfoAlert = InfoAlert { message, successful: true };
       
       let _expected_result = context.get_html(tera);
 
@@ -281,7 +343,81 @@ mod shortcut_repository_tests {
       let result = shortcut_service.update(&input).await;
       
       let tera:Tera = TERA.read().unwrap().clone();
-      let context: ErrorTemplate = ErrorTemplate { error: ShortcutError::FailedToUpdate.to_string(), successful: false };
+      let context: ErrorAlert = ErrorAlert { error: ShortcutError::FailedToUpdate.to_string(), successful: false };
+      
+      let _expected_result = context.get_html(tera);
+
+      assert_eq!(result.0, _expected_result.0)
+    }
+  }
+
+  mod delete_tests {
+    use tera::Tera;
+
+    use crate::{
+      error::ShortcutError, 
+      macros::renderable::Renderable, 
+      repository::shortcut::MockShortcutRepositoryTrait, 
+      service::shortcut::ShortcutService,
+      templates::components::{ErrorDialog, InfoDialog, SuccessDialog}, 
+      TERA
+    };
+
+    const ACTION: &str = "delete";
+
+    #[tokio::test]
+    async fn return_success_html_when_updated() {
+      let mut mock: MockShortcutRepositoryTrait = MockShortcutRepositoryTrait::default(); 
+      mock.expect_delete().returning(|_| Ok(true));
+
+      let shortcut_service = ShortcutService::new(mock);
+
+      let keyword: &str = "google";
+      let result = shortcut_service.delete(keyword).await;
+
+      let tera:Tera = TERA.read().unwrap().clone();
+      let title: String = "Successfully deleted shortcut!".to_string();
+      let message: String = format!("Deleted shortcut for keyword: {}", keyword.to_owned()).to_string();
+      let context: SuccessDialog = SuccessDialog { title, message, keyword: keyword.to_owned(), action: ACTION.to_string(), status: "success".to_string() };
+      
+      let _expected_result = context.get_html(tera);
+
+      assert_eq!(result.0, _expected_result.0)
+    }
+
+    #[tokio::test]
+    async fn return_info_html_when_no_entry_found() {
+      let mut mock: MockShortcutRepositoryTrait = MockShortcutRepositoryTrait::default(); 
+      mock.expect_delete().returning(|_| Ok(false));
+
+      let shortcut_service = ShortcutService::new(mock);
+        
+      let keyword: &str = "google";
+      let result = shortcut_service.delete(keyword).await;
+
+      let tera:Tera = TERA.read().unwrap().clone();
+      let title: String = "Shortcut could not be found!".to_string();
+      let message: String = format!("Could not delete shortcut for keyword: {}", keyword.to_owned()).to_string();
+      let context: InfoDialog = InfoDialog { title, message, keyword: keyword.to_owned(), action: ACTION.to_string(), status: "info".to_string() };
+
+      let _expected_result = context.get_html(tera);
+
+      assert_eq!(result.0, _expected_result.0)
+    }
+
+    #[tokio::test]
+    async fn return_error_html_when_failed_to_update() {
+      let mut mock: MockShortcutRepositoryTrait = MockShortcutRepositoryTrait::default(); 
+      mock.expect_delete().returning(|_|  Err(ShortcutError::FailedToDelete));
+
+      let shortcut_service = ShortcutService::new(mock);
+        
+      let keyword: &str = "google";
+      let result = shortcut_service.delete(keyword).await;
+
+      let tera:Tera = TERA.read().unwrap().clone();
+      let title: String = "Error while deleting shortcut!".to_string();
+      let context: ErrorDialog = ErrorDialog { title, message: ShortcutError::FailedToDelete.to_string(), keyword: keyword.to_owned(), action: ACTION.to_string(), status: "error".to_string() };
       
       let _expected_result = context.get_html(tera);
 
@@ -298,7 +434,7 @@ mod shortcut_repository_tests {
       models::shortcut::PostRequest, 
       repository::shortcut::MockShortcutRepositoryTrait, 
       service::shortcut::{shortcut_repository_tests::{GOOGLE_COM_SHORTCUT, GOOGLE_SHORTCUT}, ShortcutService}, 
-      templates::components::{CheckUpdateTemplate, ErrorTemplate, InfoTemplate, SuccessTemplate}, 
+      templates::components::{CheckUpdateTemplate, ErrorAlert, InfoAlert, SuccessAlert}, 
       TERA
     };
 
@@ -313,7 +449,7 @@ mod shortcut_repository_tests {
       let result = shortcut_service.create(&input).await;
 
       let tera:Tera = TERA.read().unwrap().clone();
-      let context: SuccessTemplate = SuccessTemplate { message: "Successfully created shortcut!".into(), successful: true };
+      let context: SuccessAlert = SuccessAlert { message: "Successfully created shortcut!".into(), successful: true };
       
       let _expected_result = context.get_html(tera);
 
@@ -332,7 +468,7 @@ mod shortcut_repository_tests {
       let result = shortcut_service.create(&input).await;
 
       let tera:Tera = TERA.read().unwrap().clone();
-      let context = InfoTemplate { message: "Shortcut already added.".into(), successful: true };
+      let context = InfoAlert { message: "Shortcut already added.".into(), successful: true };
       
       let _expected_result = context.get_html(tera);
 
@@ -370,7 +506,7 @@ mod shortcut_repository_tests {
       let result = shortcut_service.create(&input).await;
 
       let tera:Tera = TERA.read().unwrap().clone();            
-      let context: ErrorTemplate = ErrorTemplate { error: ShortcutError::FailedToGet.to_string(), successful: false };
+      let context: ErrorAlert = ErrorAlert { error: ShortcutError::FailedToGet.to_string(), successful: false };
             
       let _expected_result = context.get_html(tera);
 
@@ -388,7 +524,7 @@ mod shortcut_repository_tests {
       let result = shortcut_service.create(&input).await;
 
       let tera:Tera = TERA.read().unwrap().clone();            
-      let context: ErrorTemplate = ErrorTemplate { error: ShortcutError::FailedToCreate.to_string(), successful: false };
+      let context: ErrorAlert = ErrorAlert { error: ShortcutError::FailedToCreate.to_string(), successful: false };
             
       let _expected_result = context.get_html(tera);
 
@@ -405,7 +541,7 @@ mod shortcut_repository_tests {
       models::shortcut::Shortcut, 
       repository::shortcut::MockShortcutRepositoryTrait, 
       service::shortcut::{shortcut_repository_tests::{GLE_SHORTCUT, GOOGLE_SHORTCUT, G_SHORTCUT}, ShortcutService}, 
-      templates::components::{CreateNewTemplate, ErrorTemplate, SearchResultsTemplate}, 
+      templates::components::{CreateNewTemplate, ErrorAlert, SearchResultsTemplate}, 
       TERA
     };
 
@@ -457,7 +593,7 @@ mod shortcut_repository_tests {
       let result = shortcut_service.find_similar(&input).await;
 
       let tera:Tera = TERA.read().unwrap().clone();
-      let context: ErrorTemplate = ErrorTemplate { error:ShortcutError:: FailedToSearch.to_string(), successful: false };
+      let context: ErrorAlert = ErrorAlert { error:ShortcutError:: FailedToSearch.to_string(), successful: false };
       
       let _expected_result = context.get_html(tera);
 

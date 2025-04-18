@@ -1,6 +1,6 @@
 use axum::{
   middleware::from_fn,
-  routing::{get, post},
+  routing::{delete, get, post},
   Router,
 };
 
@@ -10,6 +10,7 @@ use self::{
   shortcut::redirect_shortcut,
   shortcut::search_shortcuts,
   shortcut::update_shortcut,
+  shortcut::delete_shortcut,
 };
 
 pub mod middleware;
@@ -21,5 +22,6 @@ pub fn create_api_routes() -> Router {
     .route("/post", post(post_shortcut))
     .route("/get", get(redirect_shortcut))
     .route("/update", post(update_shortcut))
+    .route("/delete", delete(delete_shortcut))
     .layer(from_fn(get_htmx_header))
 }
