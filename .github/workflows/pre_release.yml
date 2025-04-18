@@ -27,22 +27,6 @@ jobs:
           VERSION=${VERSION#v} # Remove the 'v' prefix if present
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      # Step 2: Fetch branch name of the most recently merged PR
-      - name: Get branch name of most recently merged PR
-        id: get_branch_name
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          API_URL="https://api.github.com/repos/${{ github.repository }}/pulls?state=closed&per_page=1"
-          RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" $API_URL)
-          BRANCH_NAME=$(echo $RESPONSE | jq -r '.[0].head.ref')
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-
-      # Step 3: Use the branch name
-      - name: Use the branch name
-        run: |
-          echo "The branch name of the most recently merged PR is: ${{ env.BRANCH_NAME }}"
-
       # Step 3: Determine next version
       - name: Determine next version
         id: versioning
@@ -52,15 +36,17 @@ jobs:
           MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
           PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
 
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}" # Get the branch name
+
           # Determine version increment based on branch prefix
-          if [[ "${{ env.BRANCH_NAME }}" == breaking/* ]]; then
+          if [[ "$BRANCH_NAME" == breaking/* ]]; then
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
-          elif [[ "${{ env.BRANCH_NAME }}" == feature/* ]]; then
+          elif [[ "$BRANCH_NAME" == feature/* ]]; then
             MINOR=$((MINOR + 1))
             PATCH=0
-          elif [[ "${{ env.BRANCH_NAME }}" == bugfix/* ]]; then
+          elif [[ "$BRANCH_NAME" == bugfix/* ]]; then
             PATCH=$((PATCH + 1))
           fi
 
@@ -86,32 +72,16 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-
-          # Check if a larger release branch already exists
           if [ "${{ env.RELEASE_BRANCH_EXISTS }}" == "true" ]; then
-            # If the release branch exists, fetch remote changes
-            git fetch origin
+            # If a larger release branch exists, update it
             git checkout release/${{ env.EXISTING_BRANCH }}
-
-            # Ensure the branch is up-to-date by pulling and merging remote changes
-            git pull origin release/${{ env.EXISTING_BRANCH }} --rebase || (
-              echo "Pull failed due to conflicts. Aborting."
-              git merge --abort
-              exit 1
-            )
-
-            # Push the updated branch
-            git push origin release/${{ env.EXISTING_BRANCH }} || (
-              echo "Push failed due to non-fast-forward updates. Attempting force push..."
-              git push origin release/${{ env.EXISTING_BRANCH }} --force
-            )
+            git merge origin/main
+            git push origin release/${{ env.EXISTING_BRANCH }}
           else
-            # Close any existing branches and create a new higher version branch
+            # Close existing branches and create a new higher version branch
             if [ -n "${{ env.EXISTING_BRANCH }}" ]; then
               git push origin --delete release/${{ env.EXISTING_BRANCH }}
             fi
-            
-            # Create and push the new release branch
             git checkout -b ${{ env.RELEASE_BRANCH }}
             git push origin ${{ env.RELEASE_BRANCH }}
           fi
