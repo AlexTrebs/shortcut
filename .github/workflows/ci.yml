@@ -45,7 +45,6 @@ jobs:
 
       - name: Install npm dependencies
         run: |
-          ls -la
           npm install -g pnpm
           pnpm install
 
@@ -89,11 +88,11 @@ jobs:
           sqlx db create
           sqlx migrate run --source ./migrations
 
-      - name: Build Debug
-        run: cargo build --verbose
+      - name: Build
+        run: cargo build
 
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test
 
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings

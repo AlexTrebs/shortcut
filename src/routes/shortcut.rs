@@ -1,6 +1,6 @@
 use crate::{
   macros::renderable::Renderable,
-  models::shortcut::{PostRequest, SearchRequest}, 
+  models::shortcut::{PostRequest, KeywordRequest}, 
   state::AppState, 
   templates::components::EmptyTemplate, 
   TERA, 
@@ -28,7 +28,7 @@ pub async fn get_empty_html() -> Html<String> {
 /// If the keyword inputted is empty, it will instead return an empty `Html` `String`.
 pub async fn search_shortcuts(
   Extension(app): Extension<AppState>,
-  Query(params): Query<SearchRequest>,
+  Query(params): Query<KeywordRequest>,
 ) -> Result<Html<String>, ()> {
   debug!("{:?}", params.keyword);
 
@@ -41,7 +41,7 @@ pub async fn search_shortcuts(
 
 /// This is the function for the `/api/post` endpoint.
 /// 
-/// It will call the `Shortcut_Service` funciton `create` and return the result.
+/// It will call the `Shortcut_Service` function `create` and return the result.
 pub async fn post_shortcut(
   Extension(app): Extension<AppState>,
   Form(params): Form<PostRequest>,
@@ -53,10 +53,10 @@ pub async fn post_shortcut(
 
 /// This is the function for the `/api/get` endpoint.
 /// 
-/// It will call the `Shortcut_Service` funciton `get` and return the result.
+/// It will call the `Shortcut_Service` function `get` and return the result.
 pub async fn redirect_shortcut(
   Extension(app): Extension<AppState>,
-  Form(params): Form<SearchRequest>,
+  Form(params): Form<KeywordRequest>,
 ) -> Result<Redirect, ()> {
   debug!("{:?}", params.keyword);
 
@@ -65,7 +65,7 @@ pub async fn redirect_shortcut(
 
 /// This is the function for the `/api/update` endpoint.
 /// 
-/// It will call the `Shortcut_Service` funciton `update` and return the result.
+/// It will call the `Shortcut_Service` function `update` and return the result.
 pub async fn update_shortcut(
   Extension(app): Extension<AppState>,
   Form(params): Form<PostRequest>,
@@ -73,4 +73,16 @@ pub async fn update_shortcut(
   debug!("{:?}", params.keyword);
 
   Ok(app.shortcut_service.update(&params).await)
+}
+
+/// This is the function for the `/api/delete` endpoint.
+/// 
+/// It will call the `Shortcut_Service` function `delete` and return the result.
+pub async fn delete_shortcut(
+  Extension(app): Extension<AppState>,
+  Form(params): Form<KeywordRequest>,
+) -> Result<Html<String>, ()> {
+  debug!("{:?}", params.keyword);
+
+  Ok(app.shortcut_service.delete(params.keyword.as_str()).await)
 }

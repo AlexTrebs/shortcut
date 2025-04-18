@@ -55,12 +55,12 @@ pub trait ShortcutRepositoryTrait {
   /// You can expect this to return `true` if successfully created.
   /// 
   /// ## Parameters
-  /// - `todo`: The `&Shortcut` to create.
+  /// - `shortcut`: The `&Shortcut` to create.
   /// 
   /// ## Returns
   /// - `Result<bool, ShortcutError>`, will be true if successful, `ShortcutError::UniqueConstraintError` if the `Shortcut` already exists,
   ///   or `ShortcutError::FailedToCreate` if error occurs while creating.
-  async fn create(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
+  async fn create(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError>;
 
   /// A function to update a `Shortcut` given an inputed shortcut object.
   /// 
@@ -69,12 +69,26 @@ pub trait ShortcutRepositoryTrait {
   /// You can expect this to return `true` if successfully updated.
   /// 
   /// ## Parameters
-  /// - `todo`: The `&Shortcut` to update.
+  /// - `shortcut`: The `&Shortcut` to update.
   /// 
   /// ## Returns
   /// - `Result<bool, ShortcutError>`, will be true if successful, false if nothing is updated, and `ShortcutError::FailedToUpdare`
   ///   if an error occurs while updating.
-  async fn update(&self, todo: &Shortcut) -> Result<bool, ShortcutError>;
+  async fn update(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError>;
+
+  /// A function to delete a `Shortcut` given an inputed keyword.
+  /// 
+  /// This will take the `keyword`, from a `Shortcut` object and delete the `Shortcut` with the same `keyword`.
+  /// 
+  /// You can expect this to return `true` if successfully deletes.
+  /// 
+  /// ## Parameters
+  /// - `shortcut`: The `&Shortcut` to update.
+  /// 
+  /// ## Returns
+  /// - `Result<bool, ShortcutError>`, will be true if successful, false if nothing is deleted, and `ShortcutError::FailedToUpdare`
+  ///   if an error occurs while updating.
+  async fn delete(&self, keyword: &str) -> Result<bool, ShortcutError>;
 }
 
 impl ShortcutRepositoryTrait for ShortcutRepository {
@@ -175,6 +189,27 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
       Err(err) => {
         error!("Failed to update shortcut ({}) in database: {}", shortcut.keyword, err);
         Err(ShortcutError::FailedToUpdate)
+      }
+    }
+  }
+
+  async fn delete(&self, keyword: &str) -> Result<bool, ShortcutError> {
+    let result = sqlx::query!(r#"DELETE from shortcuts WHERE keyword = ?1"#, keyword)
+      .execute(&self.database)
+      .await;
+
+    match result {
+      Ok(res) => 
+        if res.rows_affected() == 1 {Ok(true)} 
+        else if res.rows_affected() == 0 {Ok(false)}
+        else {
+          error!("Failed to delete shortcut ({}) in database: updated {} rows", keyword, res.rows_affected());
+
+          Err(ShortcutError::FailedToDelete)
+        },
+      Err(err) => {
+        error!("Failed to update shortcut ({}) in database: {}", keyword, err);
+        Err(ShortcutError::FailedToDelete)
       }
     }
   }
@@ -343,6 +378,28 @@ mod shortcut_repository_tests {
     async fn returns_false_when_not_exists() {
       let shortcut_repository: ShortcutRepository = setup().await;
       let result = shortcut_repository.update(&BING_SHORTCUT).await.unwrap();
+  
+      assert!(!result);
+    }
+  }
+
+  mod delete_test {
+    use crate::repository::shortcut::{ShortcutRepository, ShortcutRepositoryTrait};
+
+    use super::{setup, GOOGLE_COM_SHORTCUT, BING_SHORTCUT};
+
+    #[tokio::test]
+    async fn returns_true_when_exists() {
+      let shortcut_repository: ShortcutRepository = setup().await;
+      let result = shortcut_repository.delete(GOOGLE_COM_SHORTCUT.keyword.as_str()).await.unwrap();
+      
+      assert!(result);
+    }
+  
+    #[tokio::test]
+    async fn returns_false_when_not_exists() {
+      let shortcut_repository: ShortcutRepository = setup().await;
+      let result = shortcut_repository.delete(BING_SHORTCUT.keyword.as_str()).await.unwrap();
   
       assert!(!result);
     }

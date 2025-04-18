@@ -50,7 +50,7 @@ impl Shortcut {
 
 /// Required to cast request within search endpoints to object.
 #[derive(Deserialize)]
-pub struct SearchRequest {
+pub struct KeywordRequest {
   pub keyword: String,
 }
 

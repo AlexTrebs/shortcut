@@ -15,5 +15,7 @@ pub enum ShortcutError {
     #[error("Failed to find match for keyword, would you like to create one?.")]
     NoMatches,
     #[error("Failed to search shortcuts.")]
-    FailedToSearch
+    FailedToSearch,
+    #[error("Failed to delete shortcuts.")]
+    FailedToDelete
 }
