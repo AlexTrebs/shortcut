@@ -86,35 +86,51 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-
-          # Check if a larger release branch already exists
+          
+          # Ensure we have the latest info
+          git fetch origin
+          
           if [ "${{ env.RELEASE_BRANCH_EXISTS }}" == "true" ]; then
-            # If the release branch exists, fetch remote changes
-            git fetch origin
+            # If the release branch exists, check it out
             git checkout release/${{ env.EXISTING_BRANCH }}
-
-            # Ensure the branch is up-to-date by pulling and merging remote changes
-            git pull origin release/${{ env.EXISTING_BRANCH }} --rebase || (
-              echo "Pull failed due to conflicts. Aborting."
-              git merge --abort
-              exit 1
-            )
-
-            # Push the updated branch
-            git push origin release/${{ env.EXISTING_BRANCH }} || (
-              echo "Push failed due to non-fast-forward updates. Attempting force push..."
-              git push origin release/${{ env.EXISTING_BRANCH }} --force
-            )
+            # Make sure we have the latest main changes
+            git fetch origin main
+            #
+            # Identify the version update commit(s) – the commit(s) on release/branch
+            # that are not present in origin/main.
+            #
+            # In our case we expect one commit (the update to package files)
+            COMMIT=$(git rev-list origin/main..HEAD --max-count=1)
+            echo "Identified version update commit: $COMMIT"
+            if [ -z "$COMMIT" ]; then
+              echo "No version update commit found (branch may already be in sync with main)."
+              exit 0
+            fi
+            #
+            # Reset the release branch to the latest main
+            git reset --hard origin/main
+            #
+            # Cherry-pick the version update commit onto the updated branch.
+            # The "-X theirs" option lets the changes from the commit override in-cherry-pick conflicts.
+            git cherry-pick -X theirs $COMMIT || (echo "Cherry-pick failed; please resolve conflicts manually." && exit 1)
+            #
+            # Force push the updated branch (since history was rewritten)
+            git push origin release/${{ env.EXISTING_BRANCH }} --force
           else
-            # Close any existing branches and create a new higher version branch
+            # If no release branch exists:
+            # If a lower version branch exists, delete it:
             if [ -n "${{ env.EXISTING_BRANCH }}" ]; then
               git push origin --delete release/${{ env.EXISTING_BRANCH }}
             fi
-            
-            # Create and push the new release branch
-            git checkout -b ${{ env.RELEASE_BRANCH }}
+            # Create a new release branch from the latest main
+            git checkout -b ${{ env.RELEASE_BRANCH }} origin/main
+            #
+            # Add the version update commit from the working directory
+            git add package.json Cargo.toml
+            git commit -m "Update version to $NEW_VERSION"
             git push origin ${{ env.RELEASE_BRANCH }}
           fi
+
 
       # Step 6: Update version in package.json and Cargo.toml
       - name: Update version files
