@@ -94,7 +94,7 @@ jobs:
             git branch --unset-upstream || true
             git branch --set-upstream-to=origin/"$BRANCH" "$BRANCH"
 
-            git merge origin/main --no-edit
+            git reset --hard origin/main
           else
             echo "Creating new release branch $BRANCH from origin/main..."
             git checkout -B "$BRANCH" origin/main
