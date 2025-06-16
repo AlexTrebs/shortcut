@@ -85,11 +85,11 @@ jobs:
 
       - name: Set-up Database
         env:
-          DATABASE_URL: "sqlite://shortcuts.db?mode=rwc"
+          DATABASE_URL: "sqlite://shortcut.db?mode=rwc"
         run: |
           sqlx db create
           sqlx migrate run --source ./migrations
-
+          
       - name: Build Project
         run: cargo build
 

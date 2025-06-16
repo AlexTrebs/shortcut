@@ -12,7 +12,7 @@ macro_rules! impl_renderable {
   ($($t:ty),*) => {
     $(impl Renderable for $t {
       fn get_html(&self, tera: Tera) -> Html<String> {
-        Html(self.render(tera))
+        Html(self.render(&tera))
       }
     })*
   };
