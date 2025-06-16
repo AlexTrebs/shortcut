@@ -4,7 +4,7 @@ use thiserror::Error;
 pub enum ShortcutError {
     #[error("shortcut not found.")]
     NotFound,
-    #[error("Failed to get shortcuts.")]
+    #[error("Failed to get shortcut.")]
     FailedToGet,
     #[error("Failed to create shortcut. Please try again.")]
     FailedToCreate,
@@ -14,8 +14,8 @@ pub enum ShortcutError {
     FailedToUpdate,
     #[error("Failed to find match for keyword, would you like to create one?.")]
     NoMatches,
-    #[error("Failed to search shortcuts.")]
+    #[error("Failed to search shortcut.")]
     FailedToSearch,
-    #[error("Failed to delete shortcuts.")]
+    #[error("Failed to delete shortcut.")]
     FailedToDelete
 }

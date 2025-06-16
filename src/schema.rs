@@ -17,7 +17,7 @@ pub async fn connect_db() -> Pool<Sqlite> {
 
   // let google: Shortcut = Shortcut::new("google".to_owned(), "https://google.co.uk".to_owned());
 
-  // sqlx::query("INSERT OR IGNORE INTO shortcuts (created, updated, keyword, url) VALUES (?1, ?2, ?3, ?4)")
+  // sqlx::query("INSERT OR IGNORE INTO shortcut (created, updated, keyword, url) VALUES (?1, ?2, ?3, ?4)")
   // .bind(google.created)
   // .bind(google.updated)
   // .bind(google.keyword)

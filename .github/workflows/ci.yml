@@ -85,7 +85,7 @@ jobs:
 
       - name: Set-up Database
         env:
-          DATABASE_URL: "sqlite://shortcuts.db?mode=rwc"
+          DATABASE_URL: "sqlite://shortcut.db?mode=rwc"
         run: |
           sqlx db create
           sqlx migrate run --source ./migrations
@@ -105,5 +105,5 @@ jobs:
           nohup cargo run > server.log 2>&1 &
           echo "Waiting for server to start..."
           # Wait up to 30 seconds for healthcheck
-          timeout 30 bash -c 'until curl -fs http://localhost:3000/healthcheck; do echo "Waiting for server..."; sleep 2; done'
+          timeout 30 bash -c 'until curl -fs http://localhost:8035/healthcheck; do echo "Waiting for server..."; sleep 2; done'
           echo "Server is up and running."
