@@ -1,0 +1,9 @@
+nohup: ignoring input
+   Compiling shortcut v1.0.3 (/root/workplace/shortcut)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.93s
+     Running `target/debug/shortcut`
+[2m2025-06-17T21:30:28.116518Z[0m [32m INFO[0m [2mshortcut[0m[2m:[0m listening on 0.0.0.0:8035
+
+thread 'main' panicked at /root/workplace/shortcut/src/lib.rs:96:50:
+called `Result::unwrap()` on an `Err` value: Os { code: 98, kind: AddrInUse, message: "Address already in use" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

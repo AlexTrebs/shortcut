@@ -97,7 +97,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
   }
 
   async fn fuzzy_search(&self, search: &str) -> Result<Vec<Shortcut>, ShortcutError> {
-    let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcuts;"#)
+    let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcut;"#)
       .fetch_all(&self.database)
       .await;
 
@@ -133,7 +133,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
   }
 
   async fn get(&self, keyword: &str) -> Result<Shortcut, ShortcutError> {
-    let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcuts WHERE keyword = ?1;"#, keyword)
+    let result = sqlx::query_as!(Shortcut, r#"SELECT * FROM shortcut WHERE keyword = ?1;"#, keyword)
       .fetch_one(&self.database).await;
 
     match result {
@@ -148,7 +148,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
 
   async fn create(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
     let result = sqlx::query!(
-        r#"INSERT INTO shortcuts (created, updated, keyword, url) VALUES (?1, ?2, ?3, ?4)"#, 
+        r#"INSERT INTO shortcut (created, updated, keyword, url) VALUES (?1, ?2, ?3, ?4)"#, 
         shortcut.created, 
         shortcut.updated,
         shortcut.keyword,
@@ -169,7 +169,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
 
   async fn update(&self, shortcut: &Shortcut) -> Result<bool, ShortcutError> {
     let result = sqlx::query!(
-      r#"UPDATE shortcuts SET url = ?1, updated = ?2 WHERE keyword = ?3"#, 
+      r#"UPDATE shortcut SET url = ?1, updated = ?2 WHERE keyword = ?3"#, 
       shortcut.url,
       shortcut.updated,
       shortcut.keyword
@@ -194,7 +194,7 @@ impl ShortcutRepositoryTrait for ShortcutRepository {
   }
 
   async fn delete(&self, keyword: &str) -> Result<bool, ShortcutError> {
-    let result = sqlx::query!(r#"DELETE from shortcuts WHERE keyword = ?1"#, keyword)
+    let result = sqlx::query!(r#"DELETE from shortcut WHERE keyword = ?1"#, keyword)
       .execute(&self.database)
       .await;
 
@@ -275,7 +275,7 @@ mod shortcut_repository_tests {
   
   async fn bulk_insert(pool: Pool<Sqlite>) -> Pool<Sqlite> {
     // Create temporary table within memory
-    pool.execute("CREATE TABLE IF NOT EXISTS shortcuts (
+    pool.execute("CREATE TABLE IF NOT EXISTS shortcut (
         id        INTEGER UNIQUE,
         created   INTEGER NOT NULL,
         updated   INTEGER NOT NULL,
@@ -286,7 +286,7 @@ mod shortcut_repository_tests {
 
     // Batch insert test data
     let query = "
-        INSERT INTO shortcuts (created, updated, keyword, url) VALUES
+        INSERT INTO shortcut (created, updated, keyword, url) VALUES
         (1, 2, 'google', 'https://google.co.uk'), 
         (11, 22, 'g', 'https://google.com'), 
         (111, 222, 'test', 'https://test.co.uk'), 

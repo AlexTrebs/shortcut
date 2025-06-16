@@ -26,7 +26,7 @@ pub async fn get_empty_html() -> Html<String> {
 /// It will call the `Shortcut_Service` function `find_similar` function and return the result. 
 /// 
 /// If the keyword inputted is empty, it will instead return an empty `Html` `String`.
-pub async fn search_shortcuts(
+pub async fn search_shortcut(
   Extension(app): Extension<AppState>,
   Query(params): Query<KeywordRequest>,
 ) -> Result<Html<String>, ()> {

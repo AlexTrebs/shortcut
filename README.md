@@ -4,16 +4,16 @@
 [![CI][s0]][l0] [![UNSAFE][s3]][l3] [![dep_status][s7]][l7] 
 </h1>
 
-[s0]: https://github.com/AlexTrebs/Shortcuts/workflows/CI/badge.svg
-[l0]: https://github.com/AlexTrebs/Shortcuts/actions
+[s0]: https://github.com/AlexTrebs/Shortcut/workflows/CI/badge.svg
+[l0]: https://github.com/AlexTrebs/Shortcut/actions
 [s3]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [l3]: https://github.com/rust-secure-code/safety-dance/
-[s7]: https://deps.rs/repo/github/AlexTrebs/Shortcuts/status.svg
-[l7]: https://deps.rs/repo/github/AlexTrebs/Shortcuts
+[s7]: https://deps.rs/repo/github/AlexTrebs/Shortcut/status.svg
+[l7]: https://deps.rs/repo/github/AlexTrebs/Shortcut
 
 <h5 align="center">A fast, simple, browser shortcut tool.</h1>
 
-![](docs/images/shortcuts_demo.gif)
+![](docs/images/shortcut_demo.gif)
 
 ## <a name="table-of-contents"></a> Table of Contents
 
@@ -104,34 +104,34 @@ Following this you will need to set up a shortcut for your search bar. Given you
 1. Go to chrome://settings/search. 
 2. Click "Manage search engines and site search". 
 3. Click "Add" next to "Site search". 
-4. Fill the url to be `http://localhost:3000/api/get?keyword=%s`
+4. Fill the url to be `http://localhost:8035/api/get?keyword=%s`
 5. Fill out the rest of the details and save.
 
 #### <b><u>Mozilla Firefox:</u></b>
 1. Go to about:preferences#search. 
-2. Click "Search Shortcuts". 
+2. Click "Search Shortcut". 
 3. Click "Add". 
-4. Fill the url to be `http://localhost:3000/api/get?keyword=%s`
+4. Fill the url to be `http://localhost:8035/api/get?keyword=%s`
 5. Fill out the rest of the details and save.
 
 #### <b><u>Microsoft Edge:</u></b>
 1. Go to edge://settings/searchEngines?search=address. 
 2. Click "Add" next to "Site search". 
-3. Fill the url to be `http://localhost:3000/api/get?keyword=%s`
+3. Fill the url to be `http://localhost:8035/api/get?keyword=%s`
 4. Fill out the rest of the details and save.
  
 #### <b><u>Brave:</u></b>
 1. Go to brave://settings/search. 
 2. Click "Manage search engines and site search". 
 3. Click "Add" next to "Site search". 
-4. Fill the url to be `http://localhost:3000/api/get?keyword=%s`
+4. Fill the url to be `http://localhost:8035/api/get?keyword=%s`
 5. Fill out the rest of the details and save.
 
 #### <b><u>Vivaldi:</u></b>
 1. Go to vivaldi://settings/search. 
 2. Click "Search Engines". 
 3. Click "Add" next to "Site search". 
-4. Fill the url to be `http://localhost:3000/api/get?keyword=%s`
+4. Fill the url to be `http://localhost:8035/api/get?keyword=%s`
 5. Fill out the rest of the details and save.
 
 ## 5. <a name="arch"></a> Architecture <small><sup>[Top ▲](#table-of-contents)</sup></small>
@@ -201,7 +201,7 @@ All the config is kept within the `.env` file.
 The default is:
 
 ```sh
-DATABASE_FILENAME=shortcuts.db
+DATABASE_FILENAME=shortcut.db
 DATABASE_URL=sqlite://${DATABASE_FILENAME}?mode=rwc
 PORT=3000
 UI_URL=http://localhost:${PORT}
