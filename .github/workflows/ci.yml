@@ -91,7 +91,9 @@ jobs:
           sqlx migrate run --source ./migrations
 
       - name: Build Project
-        run: cargo build
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          cargo build --target x86_64-unknown-linux-gnu
 
       - name: Run Tests
         run: cargo test

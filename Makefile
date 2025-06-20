@@ -32,8 +32,6 @@ build-windows:
 
 	echo "✅ Done!"
 
-build-mac: 
-	sudo apt install -y libzstd-dev pkg-config build-essential
-
-	cargo build --release --target x86_64-apple-darwin
-	# cargo build --release --target x86_64-unknown-linux-gnu
+build-linux: 
+	rustup target add x86_64-unknown-linux-gnu 
+	cargo build --release --target x86_64-unknown-linux-gnu
