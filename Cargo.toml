@@ -9,18 +9,31 @@ build = "build/build.rs"
 axum = { version = "0.8.4", features = ["macros"] }
 dotenv = "0.15"
 serde = { version = "1.0.219", features = ["derive"] }
-sqlx = { version= "0.8.5", features=["sqlite"] }
+sqlx = { version= "0.8.5", features=["sqlite", "runtime-tokio-native-tls", "macros"] }
 state = "0.6.0"
 tera = { version = "1.20", default-features = false}
-tera-hot-reload = { version = "0.2.4" }
+tera-hot-reload = "0.2.4"
 tokio = { version  = "1.45.0", features = ["full"] }
 tower-http = { version = "0.6.4", features = ["full"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing = "0.1.40"
 thiserror = "2.0.12"
-url = "^2.5.4"
-sqlx-cli = "0.8.5"
+url = "2.5.4"
+sqlx-cli = { version = "0.8.5", optional = true }
 rust-fuzzy-search = "0.1.1"
 lazy_static = "1.5.0"
 mockall = "0.13.1"
 auto-launch = "0.5.0"
+
+[build-dependencies]
+cc = "1.0" 
+
+[features]
+default = []
+sqlite-bundled = [] 
+
+[profile.release]
+lto = true
+strip = true
+opt-level = "z"
+codegen-units = 1
