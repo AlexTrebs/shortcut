@@ -12,10 +12,11 @@ serde = { version = "1.0.219", features = ["derive"] }
 sqlx = { version= "0.8.5", features=["sqlite", "runtime-tokio-native-tls", "macros"] }
 state = "0.6.0"
 tera = { version = "1.20", default-features = false}
-tera-hot-reload = "0.2.4"
+tera-hot-reload = "0.2.5"
 tokio = { version  = "1.45.0", features = ["full"] }
 tower-http = { version = "0.6.4", features = ["full"] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-appender = "0.2"
 tracing = "0.1.40"
 thiserror = "2.0.12"
 url = "2.5.4"
@@ -26,7 +27,7 @@ mockall = "0.13.1"
 auto-launch = "0.5.0"
 
 [build-dependencies]
-cc = "1.0" 
+cc = "1.2.27" 
 
 [features]
 default = []
