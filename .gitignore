@@ -30,4 +30,5 @@ SQLite-trunk*
 *.db-shm
 *.db-wal
 ui/assets/main.css
-build/*_installer.iss
+build/windows/*_installer.iss
+logs/
