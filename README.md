@@ -1,5 +1,5 @@
 <h1 align="center">
-<img width="300px" src="docs/images/icon.png" />
+<img width="300px" src="https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/icon.png" />
 
 [![CI][s0]][l0] [![UNSAFE][s3]][l3] [![dep_status][s7]][l7] 
 </h1>
@@ -13,7 +13,7 @@
 
 <h5 align="center">A fast, simple, browser shortcut tool.</h1>
 
-![](docs/images/shortcut_demo.gif)
+![](https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/shortcuts_demo.gif)
 
 ## <a name="table-of-contents"></a> Table of Contents
 
@@ -208,5 +208,6 @@ UI_URL=http://localhost:${PORT}
 ```
 
 ## 7. <a name="faqs"></a> FAQ's <small><sup>[Top ▲](#table-of-contents)</sup></small>
+
 
 Feel free to create any issues at: https://github.com/AlexTrebs/shortcut/issues
