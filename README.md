@@ -13,7 +13,9 @@
 
 <h5 align="center">A fast, simple, browser shortcut tool.</h1>
 
-![](https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/shortcuts_demo.gif)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/shortcuts_demo.gif" alt="animated" />
+</p>
 
 ## <a name="table-of-contents"></a> Table of Contents
 
@@ -211,3 +213,4 @@ UI_URL=http://localhost:${PORT}
 
 
 Feel free to create any issues at: https://github.com/AlexTrebs/shortcut/issues
+
