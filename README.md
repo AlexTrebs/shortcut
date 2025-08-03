@@ -1,7 +1,7 @@
 <h1 align="center">
-<img width="300px" src="https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/icon.png" />
+  <img width="300px" src="https://raw.githubusercontent.com/AlexTrebs/shortcut/refs/heads/main/docs/images/icon.png" />
 
-[![CI][s0]][l0] [![UNSAFE][s3]][l3] [![dep_status][s7]][l7] 
+  [![CI][s0]][l0] [![UNSAFE][s3]][l3] [![dep_status][s7]][l7] 
 </h1>
 
 [s0]: https://github.com/AlexTrebs/Shortcut/workflows/CI/badge.svg
@@ -213,4 +213,5 @@ UI_URL=http://localhost:${PORT}
 
 
 Feel free to create any issues at: https://github.com/AlexTrebs/shortcut/issues
+
 
